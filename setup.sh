@@ -115,6 +115,16 @@ setup_llm_providers() {
         update_or_add_env_var "ENABLE_GEMINI" "false"
     fi
 
+    #Ollama Configuartion
+    echo "To enable Ollama, you must have an Ollama API key. (configuring this is not really supported yet from setup.sh))"
+    read -p "Do you want to enable Ollama (y/n)? " enable_ollama
+    if [[ "$enable_ollama" == "y" ]]; then
+        update_or_add_env_var "ENABLE_OLLAMA" "true"
+        model_options+=("OLLAMA")
+    else
+        update_or_add_env_var "ENABLE_OLLAMA" "false"
+    fi
+
     # Model Selection
     if [ ${#model_options[@]} -eq 0 ]; then
         echo "No LLM providers enabled. You won't be able to run Skyvern unless you enable at least one provider. You can re-run this script to enable providers or manually update the .env file."

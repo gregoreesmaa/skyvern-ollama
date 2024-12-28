@@ -36,6 +36,9 @@ class LLMConfigBase:
 class LLMConfig(LLMConfigBase):
     litellm_params: Optional[LiteLLMParams] = field(default=None)
     max_output_tokens: int = SettingsManager.get_settings().LLM_CONFIG_MAX_TOKENS
+    images_in_user_message: bool = False
+    num_ctx: int | None = None
+    temperature: float | None = None
 
 
 @dataclass(frozen=True)

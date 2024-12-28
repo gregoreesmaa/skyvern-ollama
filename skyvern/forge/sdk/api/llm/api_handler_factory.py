@@ -87,7 +87,7 @@ class LLMAPIHandlerFactory:
                 observer_cruise=observer_cruise,
                 observer_thought=observer_thought,
             )
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
+            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix, llm_config.images_in_user_message)
 
             await app.ARTIFACT_MANAGER.create_llm_artifact(
                 data=json.dumps(
@@ -190,7 +190,7 @@ class LLMAPIHandlerFactory:
             if not llm_config.supports_vision:
                 screenshots = None
 
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
+            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix, llm_config.images_in_user_message)
             await app.ARTIFACT_MANAGER.create_llm_artifact(
                 data=json.dumps(
                     {
@@ -267,10 +267,15 @@ class LLMAPIHandlerFactory:
 
     @staticmethod
     def get_api_parameters(llm_config: LLMConfig | LLMRouterConfig) -> dict[str, Any]:
-        return {
+        params = {
             "max_tokens": llm_config.max_output_tokens,
             "temperature": settings.LLM_CONFIG_TEMPERATURE,
         }
+        if llm_config.num_ctx:
+            params["num_ctx"] = llm_config.num_ctx
+        if llm_config.temperature:
+            params["temperature"] = llm_config.temperature
+        return params
 
     @classmethod
     def register_custom_handler(cls, llm_key: str, handler: LLMAPIHandler) -> None:
