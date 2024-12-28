@@ -21,6 +21,9 @@ services:
   skyvern:
     image: public.ecr.aws/skyvern/skyvern:latest
     restart: on-failure
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     # comment out if you want to externally call skyvern API
     ports:
       - 8000:8000
@@ -57,6 +60,9 @@ services:
   skyvern-ui:
     image: public.ecr.aws/skyvern/skyvern-ui:latest
     restart: on-failure
+    build:
+      context: .
+      dockerfile: ./Dockerfile.ui
     ports:
       - 8080:8080
       - 9090:9090
