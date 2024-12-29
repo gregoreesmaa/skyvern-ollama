@@ -52,6 +52,7 @@ if not any(
         settings.ENABLE_AZURE_GPT4O_MINI,
         settings.ENABLE_BEDROCK,
         settings.ENABLE_GEMINI,
+        settings.ENABLE_OLLAMA,
     ]
 ):
     raise NoProviderEnabledError()
@@ -287,3 +288,30 @@ if settings.ENABLE_GEMINI:
             max_output_tokens=8192,
         ),
     )
+
+if settings.ENABLE_OLLAMA:
+    if settings.OLLAMA_PRIMARY_MODEL:
+        LLMConfigRegistry.register_config(
+            "OLLAMA_PRIMARY_MODEL",
+            LLMConfig(
+                "ollama/" + settings.OLLAMA_PRIMARY_MODEL,
+                ["OLLAMA_API_BASE"],
+                supports_vision=True,
+                add_assistant_prefix=False,
+                images_in_user_message=True,
+                num_ctx=settings.OLLAMA_PRIMARY_NUM_CTX,
+                temperature=settings.OLLAMA_PRIMARY_TEMPERATURE
+            ),
+        )
+    if settings.OLLAMA_SECONDARY_MODEL:
+        LLMConfigRegistry.register_config(
+            "OLLAMA_SECONDARY_MODEL",
+            LLMConfig(
+                "ollama/" + settings.OLLAMA_SECONDARY_MODEL,
+                ["OLLAMA_API_BASE"],
+                supports_vision=False,
+                add_assistant_prefix=False,
+                num_ctx=settings.OLLAMA_SECONDARY_NUM_CTX,
+                temperature=settings.OLLAMA_PRIMARY_TEMPERATURE
+            ),
+        )

@@ -124,6 +124,15 @@ class Settings(BaseSettings):
 
     # GEMINI
     GEMINI_API_KEY: str | None = None
+    
+    # OLLAMA
+    OLLAMA_API_BASE: str | None = "localhost:11434"
+    OLLAMA_PRIMARY_MODEL: str | None = None
+    OLLAMA_PRIMARY_TEMPERATURE: float = 0.2
+    OLLAMA_PRIMARY_NUM_CTX: int = 32768
+    OLLAMA_SECONDARY_MODEL: str | None = None
+    OLLAMA_SECONDARY_TEMPERATURE: float = 0.2
+    OLLAMA_SECONDARY_NUM_CTX: int = 32768
 
     # TOTP Settings
     TOTP_LIFESPAN_MINUTES: int = 10
