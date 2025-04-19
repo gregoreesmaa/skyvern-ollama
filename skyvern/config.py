@@ -191,6 +191,7 @@ class Settings(BaseSettings):
     BITWARDEN_SERVER: str = "http://localhost"
     BITWARDEN_SERVER_PORT: int = 8002
 
+    ENABLE_SVG_CONVERSION: bool = True
     SVG_MAX_LENGTH: int = 100000
 
     ENABLE_LOG_ARTIFACTS: bool = False

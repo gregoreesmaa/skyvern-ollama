@@ -117,10 +117,15 @@ async def _convert_svg_to_string(
     task: Task | None = None,
     step: Step | None = None,
 ) -> None:
+    
     if element.get("tagName") != "svg":
         return
 
     if element.get("isDropped", False):
+        return
+
+    if not settings.ENABLE_SVG_CONVERSION:
+        _mark_element_as_dropped(element)
         return
 
     task_id = task.task_id if task else None
