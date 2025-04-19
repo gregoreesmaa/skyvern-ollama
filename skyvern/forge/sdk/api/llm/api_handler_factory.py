@@ -304,18 +304,6 @@ class LLMAPIHandlerFactory:
                 thought=thought,
                 ai_suggestion=ai_suggestion,
             )
-            LOG.warning(
-                "Preparing litellm.acompletion call",
-                model=llm_config.model_name,
-                messages_type=str(type(messages)),
-                messages_len=len(messages) if isinstance(messages, list) else "N/A",
-                # Check if api_base is explicitly set in active_parameters
-                api_base_in_params=active_parameters.get("api_base", "Not Explicitly Set (expecting env var or default)"),
-                active_parameter_keys=list(active_parameters.keys()),
-            )
-            # Use warning for the timeout value as it's a key suspect
-            LOG.warning("Explicit timeout value passed to litellm.acompletion",
-                        timeout_value=settings.LLM_CONFIG_TIMEOUT)
             t_llm_request = time.perf_counter()
             try:
                 # TODO (kerem): add a timeout to this call
