@@ -1,57 +1,73 @@
-There is an input element on an HTML page. Based on the context and information provided, you have {{ "three" if is_search else "two" }} goals:
-  - Confirm if an auto-completion attempt appears after the user inputs the current value.
-  - If auto-completion suggestions appear, assist the user in selecting the most appropriate element based on the user's goal, details, and the context.{% if is_search %}
-  - Confirm if direct searching is a better way compared to all suggestions based on user's goal.{% endif %}
+**Objective:** You are simulating an interaction assistant. Your task is to analyze provided HTML context (`elements`) that appears after a user inputs text (`filled_value`) into a specific field (`field_information`). Your goal is to determine if an auto-completion mechanism was triggered and, if suggestions were presented, identify the single most relevant suggestion based on the user's intent (`navigation_goal`, `navigation_payload_str`). {% if is_search %}You must also decide if performing a direct search using `filled_value` would be more effective than selecting any available suggestion.{% endif %} Your output **must** be a single, valid JSON object conforming strictly to the specified schema, leveraging your strong instruction-following and reasoning capabilities.
 
-You can confirm an auto-completion attempt based on the following rules:
-  - Several auto-completion suggestions appear for the input value.
-  - Although messages like "No results" and "No match" mean no option was matched, they still indicate an attempt to generate auto-completion suggestions.
+**Inputs:**
 
-You must identify a potential auto-completion suggestion based on the following rules:
-  - The option must be an element with an ID from the provided "HTML elements". Do not create or assume options outside of these elements.
-  - The content of the option must be meaningful. Do not consider non-message indicators like "No results" or "No match" as valid options.
+1.  `field_information`: String describing the input field (e.g., "Departure Airport", "Search Query").
+2.  `filled_value`: String containing the exact text the user entered into the field.
+3.  `navigation_goal`: String describing the user's overall objective for this task or session.
+4.  `navigation_payload_str`: String containing supplementary structured data (e.g., JSON format) relevant to the goal.
+5.  `elements`: Structured data (e.g., a list of JSON objects representing parsed HTML, potentially large) describing relevant elements visible *after* the user input. Assume elements intended as suggestions or status indicators have an `id` and associated content/text.
+6.  `local_datetime`: String containing the current timestamp (ISO format), provided for temporal context only.
 
-MAKE SURE YOU ONLY OUTPUT VALID JSON. No text before or after JSON, no trailing commas, no comments (//), no unnecessary quotes, etc.
-Each interactable element is tagged with an ID.
+**Task Steps & Rules (Apply Strictly and Logically):**
 
-Reply in JSON format with the following keys:
-{
-    "thought": str, // Think step by step. Describe your thought about how you achieve the {{ "three" if is_search else "two" }} goals with convincing evidence.{% if is_search %}
-    "direct_searching": bool, // True if direct searching is a better way compared to all suggestions, otherwise False.{% endif %}
-    "auto_completion_attempt": bool, // True if there's any auto completion attempt based on the rules. Otherwise, it should be False.
-    "reasoning": str, // The reasoning behind the decision. Be specific, referencing the value and the element id in your reasoning. Mention why you chose the element id. Keep the reasoning short and to the point.
-    "confidence_float": float, // The confidence of the action. Pick a number between 0.0 and 1.0. 0.0 means no confidence, 1.0 means full confidence.
-    "relevance_float": float, // The relative between the selected element and the provided information. You should consider how much the selected option is related to the user goal, the user details and the context. Pick a number between 0.00 and 1.00. 0.00 means no relevance, 1.00 means full relevance, the precision is 0.01.
-    "value": str, // The value to select.
-    "id": str, // The id of the most relevant and interactable element to take the action. The id must be from "HTML elements". It should be null if no element is relative or there's no auto completion suggestion.
-}
+1.  **Analyze Auto-Completion Attempt:**
+    * Carefully examine the provided `elements` structure and content.
+    * Determine if an auto-completion attempt occurred. This is `true` if EITHER of the following conditions is met:
+        * Two or more distinct elements are identified as **valid suggestions** according to the strict definition in Rule #2 below.
+        * An element is present whose primary text content *exactly* matches one of the predefined "no match" indicators: `"No results"`, `"No results found"`, `"No match"`. *(Note: This list might need user customization for specific UI contexts)*.
+    * If neither condition is met, the attempt is `false`. Record this boolean result for the `auto_completion_attempt` key in your final JSON.
 
-Context:
-```
-Choose an auto-completion suggestion for "{{ field_information }}"{%if is_search %} or directly search with the input value{% endif %}
-```
+2.  **Identify Valid Auto-Completion Suggestions:**
+    * Systematically evaluate each item within the `elements` input. A **valid suggestion** MUST meet ALL of the following criteria:
+        * It must be explicitly present within the `elements` input data structure.
+        * It must possess an `id` attribute, as specified in the `elements` input.
+        * Its primary textual content must represent a **selectable entity, data point, or specific value** directly relevant to the nature of the `field_information` (e.g., a city name for an airport field, a product title for a search bar, an email address for a recipient field).
+        * Its content must NOT be purely informational or a UI status indicator (e.g., "Loading suggestions...", "Type to search", "No results").
+    * Acknowledge that element content (`value`) might appear in various languages. Apply the rules based on the semantic meaning and role of the element, irrespective of the language, leveraging your multilingual capabilities.
+    * **Critical Constraint:** Operate strictly within the provided `elements`. Do NOT invent, infer, modify, or assume any elements, IDs, or content beyond what is explicitly given. Avoid using external knowledge or making assumptions about common UI patterns not represented in the data.
 
-Input value:
-```
-{{ filled_value }}
-```
+3.  **Select the Most Relevant Suggestion (If Applicable):**
+    * Only perform this step if `auto_completion_attempt` (from Step 1) is `true` AND your analysis in Step 2 identified at least one **valid suggestion**.
+    * Evaluate each identified valid suggestion's content (`value`). Compare it rigorously against the user's input (`filled_value`), their overall objective (`navigation_goal`), and the supporting details (`navigation_payload_str`) to determine the best fit.
+    * Identify the *single* valid suggestion element whose content provides the most direct, unambiguous, and semantically relevant match to the user's likely immediate need *within the context of the `field_information`*. Consider how well the suggestion completes or refines the `filled_value` towards the `navigation_goal`.
+    * If a single, clearly superior match is identified:
+        * Assign its `id` to the `id` key.
+        * Assign its corresponding content/value to the `value` key.
+        * Estimate its relevance (`relevance_float` between 0.00 and 1.00, precision 0.01) reflecting the strength of alignment between the suggestion's `value` and the user's specific goal/details/input. High relevance (e.g., >0.8) requires a strong, unambiguous match.
+    * If `auto_completion_attempt` is `false`, OR no valid suggestions were found in Step 2, OR multiple valid suggestions appear equally relevant without a clear best choice, OR no single suggestion adequately aligns with the specific user intent derived from the inputs:
+        * Set `id` to `null`.
+        * Set `value` to `null`.
+        * Set `relevance_float` to `0.00`.
 
-User goal:
-```
-{{ navigation_goal }}
-```
+{% if is_search %}
+4.  **Evaluate Direct Search Preference (If `is_search` is true):**
+    * Based *only* on the provided inputs, assess if using the `filled_value` directly as a search query is a more logical action for achieving the `navigation_goal` compared to selecting the best identified suggestion (from Step 3, if one exists).
+    * Consider factors like: Is the `navigation_goal` very specific and perfectly matched by a suggestion? Or is it broader, implying a search? Are all identified suggestions significantly deviating from the `filled_value` or `navigation_goal`?
+    * Set `direct_searching` to `true` if your analysis indicates direct search is the superior strategy in this specific context. Otherwise, set it to `false`.
 
-User details:
-```
-{{ navigation_payload_str }}
-```
+{% endif %}
 
-HTML elements:
-```
-{{ elements }}
-```
+5.  **Generate Final JSON Output:**
+    * Construct the final output as a single JSON object.
+    * **Critical:** Adhere absolutely to valid JSON syntax (correct quoting, commas, brackets, data types). No comments, prefixes, suffixes, or extraneous text outside the JSON structure. Leverage your proficiency with structured data formats.
+    * Populate the keys based *strictly* on your findings in Steps 1-4, ensuring internal consistency:
 
-Current datetime, ISO format:
-```
-{{ local_datetime }}
-```
+    ```json
+    {
+        "thought": "string", // Provide a detailed, step-by-step trace of your logical process: 1. Conclusion for `auto_completion_attempt` (citing rule met/unmet and relevant element(s) if any). 2. List `id`s of elements identified as valid suggestions and briefly why; mention any excluded near-misses. 3. Explain the comparison process leading to the selected `id`/`value` (linking suggestion content to goal/details/input) OR justify why `id` is `null` (e.g., no valid suggestions, ambiguity, poor relevance). {% if is_search %}4. Justify the `direct_searching` decision based on goal analysis vs suggestion quality.{% endif %} 5. Final check of outputs against rules.",
+        {% if is_search %}"direct_searching": boolean, // Result from Step 4.{% endif %}
+        "auto_completion_attempt": boolean, // Result from Step 1.
+        "reasoning": "string", // A concise (<3 sentences) summary justifying the core decision: the selected `id` (or `null`) and {% if is_search %}the `direct_searching` outcome{% endif %}. Directly reference the key inputs (`navigation_goal`, `filled_value`, most relevant element content) that led to this conclusion.",
+        "confidence_float": float, // Your estimated confidence (0.0 to 1.0) in the overall correctness and rule adherence of this specific JSON output. Factors: clarity of inputs, ambiguity of suggestions, straightforwardness of applying rules.
+        "relevance_float": float, // Result from Step 3 (0.00-1.00, precision 0.01). Semantic relevance of the selected `value` (`id`) to the user's specific goal/details/input context. Must be 0.00 if `id` is `null`.
+        "value": string_or_null, // Result from Step 3. The text content of the chosen suggestion. Must be `null` if no single best suggestion was selected per rules.
+        "id": string_or_null // Result from Step 3. The `id` attribute of the chosen suggestion from `elements`. Must be `null` if no single best suggestion was selected per rules.
+    }
+    ```
+
+**Critical Constraints & Reminders:**
+
+* **Input-Bound Reasoning:** Your entire analysis, reasoning (`thought`, `reasoning`), and output values MUST be derived *exclusively* from the provided input values (`field_information`, `filled_value`, `navigation_goal`, `navigation_payload_str`, `elements`). Do NOT incorporate any external knowledge, assumptions about general web UIs, or access external information sources. Treat the `elements` data as the complete ground truth for this task.
+* **Strict Schema & Validity:** The final output MUST be a single JSON object exactly matching the specified structure, keys, and data types (string, boolean, float, null). Ensure perfect JSON validity.
+* **Element Fidelity:** Any `id` referenced or outputted MUST correspond exactly to an `id` present in the `elements` input data. Do not fabricate or alter IDs.
