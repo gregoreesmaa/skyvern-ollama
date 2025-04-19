@@ -3,68 +3,21 @@ from __future__ import annotations
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
-from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field, field_validator
+from fastapi import status
+from pydantic import BaseModel, Field, field_validator, model_validator
+from typing_extensions import Self
 
-from skyvern.exceptions import InvalidTaskStatusTransition, TaskAlreadyCanceled
-from skyvern.forge.sdk.core.validators import validate_url
+from skyvern.exceptions import (
+    InvalidTaskStatusTransition,
+    SkyvernHTTPException,
+    TaskAlreadyCanceled,
+    TaskAlreadyTimeout,
+)
 from skyvern.forge.sdk.db.enums import TaskType
-
-
-class ProxyLocation(StrEnum):
-    US_CA = "US-CA"
-    US_NY = "US-NY"
-    US_TX = "US-TX"
-    US_FL = "US-FL"
-    US_WA = "US-WA"
-    RESIDENTIAL = "RESIDENTIAL"
-    RESIDENTIAL_ES = "RESIDENTIAL_ES"
-    RESIDENTIAL_IE = "RESIDENTIAL_IE"
-    RESIDENTIAL_GB = "RESIDENTIAL_GB"
-    RESIDENTIAL_IN = "RESIDENTIAL_IN"
-    RESIDENTIAL_JP = "RESIDENTIAL_JP"
-    NONE = "NONE"
-
-
-def get_tzinfo_from_proxy(proxy_location: ProxyLocation) -> ZoneInfo | None:
-    if proxy_location == ProxyLocation.NONE:
-        return None
-
-    if proxy_location == ProxyLocation.US_CA:
-        return ZoneInfo("America/Los_Angeles")
-
-    if proxy_location == ProxyLocation.US_NY:
-        return ZoneInfo("America/New_York")
-
-    if proxy_location == ProxyLocation.US_TX:
-        return ZoneInfo("America/Chicago")
-
-    if proxy_location == ProxyLocation.US_FL:
-        return ZoneInfo("America/New_York")
-
-    if proxy_location == ProxyLocation.US_WA:
-        return ZoneInfo("America/New_York")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL:
-        return ZoneInfo("America/New_York")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL_ES:
-        return ZoneInfo("Europe/Madrid")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL_IE:
-        return ZoneInfo("Europe/Dublin")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL_GB:
-        return ZoneInfo("Europe/London")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL_IN:
-        return ZoneInfo("Asia/Kolkata")
-
-    if proxy_location == ProxyLocation.RESIDENTIAL_JP:
-        return ZoneInfo("Asia/Kolkata")
-
-    return None
+from skyvern.forge.sdk.schemas.files import FileInfo
+from skyvern.schemas.runs import ProxyLocation
+from skyvern.utils.url_validators import validate_url
 
 
 class TaskBase(BaseModel):
@@ -151,10 +104,27 @@ class TaskRequest(TaskBase):
         examples=["https://my-webhook.com"],
     )
     totp_verification_url: str | None = None
+    browser_session_id: str | None = None
 
-    @field_validator("url", "webhook_callback_url", "totp_verification_url")
+    @model_validator(mode="after")
+    def validate_url(self) -> Self:
+        url = self.url
+        browser_session_id = self.browser_session_id
+
+        if len(url) == 0 and browser_session_id is not None:
+            return self
+
+        url_validation_result = validate_url(url)
+
+        if url_validation_result is None:
+            raise SkyvernHTTPException(message=f"Invalid URL: {url}", status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.url = url_validation_result
+        return self
+
+    @field_validator("webhook_callback_url", "totp_verification_url")
     @classmethod
-    def validate_urls(cls, url: str | None) -> str | None:
+    def validate_optional_urls(cls, url: str | None) -> str | None:
         if url is None:
             return None
 
@@ -272,6 +242,8 @@ class Task(TaskBase):
         if not old_status.can_update_to(status):
             if old_status == TaskStatus.canceled:
                 raise TaskAlreadyCanceled(new_status=status, task_id=self.task_id)
+            if old_status == TaskStatus.timed_out:
+                raise TaskAlreadyTimeout(task_id=self.task_id)
             raise InvalidTaskStatusTransition(old_status=old_status, new_status=status, task_id=self.task_id)
 
         if status.requires_failure_reason() and failure_reason is None:
@@ -283,9 +255,6 @@ class Task(TaskBase):
         if status.cant_have_extracted_info() and extracted_information is not None:
             raise ValueError(f"status_cant_have_extracted_information({self.task_id})")
 
-        if self.extracted_information is not None and extracted_information is not None:
-            raise ValueError(f"cant_override_extracted_information({self.task_id})")
-
         if self.failure_reason is not None and failure_reason is not None:
             raise ValueError(f"cant_override_failure_reason({self.task_id})")
 
@@ -295,7 +264,7 @@ class Task(TaskBase):
         screenshot_url: str | None = None,
         recording_url: str | None = None,
         browser_console_log_url: str | None = None,
-        downloaded_file_urls: list[str] | None = None,
+        downloaded_files: list[FileInfo] | None = None,
         failure_reason: str | None = None,
     ) -> TaskResponse:
         return TaskResponse(
@@ -310,7 +279,8 @@ class Task(TaskBase):
             screenshot_url=screenshot_url,
             recording_url=recording_url,
             browser_console_log_url=browser_console_log_url,
-            downloaded_file_urls=downloaded_file_urls,
+            downloaded_files=downloaded_files,
+            downloaded_file_urls=[file.url for file in downloaded_files] if downloaded_files else None,
             errors=self.errors,
             max_steps_per_run=self.max_steps_per_run,
             workflow_run_id=self.workflow_run_id,
@@ -328,6 +298,7 @@ class TaskResponse(BaseModel):
     screenshot_url: str | None = None
     recording_url: str | None = None
     browser_console_log_url: str | None = None
+    downloaded_files: list[FileInfo] | None = None
     downloaded_file_urls: list[str] | None = None
     failure_reason: str | None = None
     errors: list[dict[str, Any]] = []
@@ -341,15 +312,22 @@ class TaskOutput(BaseModel):
     extracted_information: list | dict[str, Any] | str | None = None
     failure_reason: str | None = None
     errors: list[dict[str, Any]] = []
+    downloaded_files: list[FileInfo] | None = None
+    downloaded_file_urls: list[str] | None = None  # For backward compatibility
 
     @staticmethod
-    def from_task(task: Task) -> TaskOutput:
+    def from_task(task: Task, downloaded_files: list[FileInfo] | None = None) -> TaskOutput:
+        # For backward compatibility, extract just the URLs from FileInfo objects
+        downloaded_file_urls = [file_info.url for file_info in downloaded_files] if downloaded_files else None
+
         return TaskOutput(
             task_id=task.task_id,
             status=task.status,
             extracted_information=task.extracted_information,
             failure_reason=task.failure_reason,
             errors=task.errors,
+            downloaded_files=downloaded_files,
+            downloaded_file_urls=downloaded_file_urls,
         )
 
 

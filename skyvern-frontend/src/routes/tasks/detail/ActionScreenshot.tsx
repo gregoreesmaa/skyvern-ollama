@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getImageURL } from "./artifactUtils";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { statusIsNotFinalized } from "../types";
+import { apiPathPrefix } from "@/util/env";
 
 type Props = {
   stepId: string;
@@ -25,7 +26,7 @@ function ActionScreenshot({ stepId, index, taskStatus }: Props) {
     queryFn: async () => {
       const client = await getClient(credentialGetter);
       return client
-        .get(`/step/${stepId}/artifacts`)
+        .get(`${apiPathPrefix}/step/${stepId}/artifacts`)
         .then((response) => response.data);
     },
     refetchInterval: (query) => {
@@ -44,7 +45,8 @@ function ActionScreenshot({ stepId, index, taskStatus }: Props) {
     (artifact) => artifact.artifact_type === ArtifactType.ActionScreenshot,
   );
 
-  const screenshot = actionScreenshots?.[index];
+  // action screenshots are reverse ordered w.r.t action order
+  const screenshot = actionScreenshots?.[actionScreenshots.length - index - 1];
 
   if (isLoading) {
     return (

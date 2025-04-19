@@ -1,12 +1,6 @@
 import { HelpTooltip } from "@/components/HelpTooltip";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WorkflowBlockInput } from "@/components/WorkflowBlockInput";
 import { useDeleteNodeCallback } from "@/routes/workflows/hooks/useDeleteNodeCallback";
 import { useNodeLabelChangeHandler } from "@/routes/workflows/hooks/useLabelChangeHandler";
 import { WorkflowBlockTypes } from "@/routes/workflows/types/workflowTypes";
@@ -15,35 +9,37 @@ import {
   Handle,
   NodeProps,
   Position,
-  useEdges,
   useNodes,
   useReactFlow,
 } from "@xyflow/react";
 import { AppNode } from "..";
 import { helpTooltips } from "../../helpContent";
-import { useWorkflowParametersState } from "../../useWorkflowParametersState";
-import { getAvailableOutputParameterKeys } from "../../workflowEditorUtils";
 import { EditableNodeTitle } from "../components/EditableNodeTitle";
 import { NodeActionMenu } from "../NodeActionMenu";
 import { WorkflowBlockIcon } from "../WorkflowBlockIcon";
 import type { LoopNode } from "./types";
+import { useState } from "react";
+import { useIsFirstBlockInWorkflow } from "../../hooks/useIsFirstNodeInWorkflow";
+import { Checkbox } from "@/components/ui/checkbox";
+import { getLoopNodeWidth } from "../../workflowEditorUtils";
 
 function LoopNode({ id, data }: NodeProps<LoopNode>) {
   const { updateNodeData } = useReactFlow();
   const nodes = useNodes<AppNode>();
-  const edges = useEdges();
+  const node = nodes.find((n) => n.id === id);
+  if (!node) {
+    throw new Error("Node not found"); // not possible
+  }
   const [label, setLabel] = useNodeLabelChangeHandler({
     id,
     initialValue: data.label,
   });
+  const [inputs, setInputs] = useState({
+    loopVariableReference: data.loopVariableReference,
+  });
   const deleteNodeCallback = useDeleteNodeCallback();
 
-  const [workflowParameters] = useWorkflowParametersState();
-  const parameters = workflowParameters.filter(
-    (parameter) => parameter.parameterType !== "credential",
-  );
-  const parameterKeys = parameters.map((parameter) => parameter.key);
-  const outputParameterKeys = getAvailableOutputParameterKeys(nodes, edges, id);
+  const isFirstWorkflowBlock = useIsFirstBlockInWorkflow({ id });
 
   const children = nodes.filter((node) => node.parentId === id);
   const furthestDownChild: Node | null = children.reduce(
@@ -64,6 +60,15 @@ function LoopNode({ id, data }: NodeProps<LoopNode>) {
     (furthestDownChild?.position.y ?? 0) +
     24;
 
+  const loopNodeWidth = getLoopNodeWidth(node, nodes);
+  function handleChange(key: string, value: unknown) {
+    if (!data.editable) {
+      return;
+    }
+    setInputs({ ...inputs, [key]: value });
+    updateNodeData(id, { [key]: value });
+  }
+
   return (
     <div>
       <Handle
@@ -79,8 +84,9 @@ function LoopNode({ id, data }: NodeProps<LoopNode>) {
         className="opacity-0"
       />
       <div
-        className="w-[600px] rounded-xl border-2 border-dashed border-slate-600 p-2"
+        className="rounded-xl border-2 border-dashed border-slate-600 p-2"
         style={{
+          width: loopNodeWidth,
           height: childrenHeightExtent,
         }}
       >
@@ -112,31 +118,43 @@ function LoopNode({ id, data }: NodeProps<LoopNode>) {
               />
             </div>
             <div className="space-y-2">
-              <div className="flex gap-2">
-                <Label className="text-xs text-slate-300">
-                  Loop Value Parameter
-                </Label>
-                <HelpTooltip content={helpTooltips["loop"]["loopValue"]} />
+              <div className="flex justify-between">
+                <div className="flex gap-2">
+                  <Label className="text-xs text-slate-300">Loop Value</Label>
+                  <HelpTooltip content={helpTooltips["loop"]["loopValue"]} />
+                </div>
+                {isFirstWorkflowBlock ? (
+                  <div className="flex justify-end text-xs text-slate-400">
+                    Tip: Use the {"+"} button to add parameters!
+                  </div>
+                ) : null}
               </div>
-              <Select
-                value={data.loopValue}
-                onValueChange={(value) => {
-                  updateNodeData(id, { loopValue: value });
+              <WorkflowBlockInput
+                nodeId={id}
+                value={inputs.loopVariableReference}
+                onChange={(value) => {
+                  handleChange("loopVariableReference", value);
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select the parameter to iterate over" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[...parameterKeys, ...outputParameterKeys].map(
-                    (parameterKey) => (
-                      <SelectItem key={parameterKey} value={parameterKey}>
-                        {parameterKey}
-                      </SelectItem>
-                    ),
-                  )}
-                </SelectContent>
-              </Select>
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="space-y-2">
+                <div className="flex gap-4">
+                  <div className="flex gap-2">
+                    <Label className="text-xs text-slate-300">
+                      Complete if Empty
+                    </Label>
+                    <HelpTooltip content="When checked, this block will successfully complete when the loop value is an empty list" />
+                  </div>
+                  <Checkbox
+                    checked={data.completeIfEmpty}
+                    disabled={!data.editable}
+                    onCheckedChange={(checked) => {
+                      handleChange("completeIfEmpty", checked);
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

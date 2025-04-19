@@ -25,6 +25,15 @@ class ActionType(StrEnum):
     SOLVE_CAPTCHA = "solve_captcha"
     TERMINATE = "terminate"
     COMPLETE = "complete"
+    RELOAD_PAGE = "reload_page"
+
+    EXTRACT = "extract"
+    SCROLL = "scroll"
+    KEYPRESS = "keypress"
+    TYPE = "type"
+    MOVE = "move"
+    DRAG = "drag"
+    VERIFICATION_CODE = "verification_code"
 
     def is_web_action(self) -> bool:
         return self in [
@@ -72,13 +81,15 @@ class CompleteVerifyResult(BaseModel):
 
 
 class InputOrSelectContext(BaseModel):
+    intention: str | None = None
     field: str | None = None
     is_required: bool | None = None
     is_search_bar: bool | None = None  # don't trigger custom-selection logic when it's a search bar
     is_location_input: bool | None = None  # address input usually requires auto completion
+    is_date_related: bool | None = None  # date picker mini agent requires some special logic
 
     def __repr__(self) -> str:
-        return f"InputOrSelectContext(field={self.field}, is_required={self.is_required}, is_search_bar={self.is_search_bar}, is_location_input={self.is_location_input})"
+        return f"InputOrSelectContext(field={self.field}, is_required={self.is_required}, is_search_bar={self.is_search_bar}, is_location_input={self.is_location_input}, intention={self.intention})"
 
 
 class Action(BaseModel):
@@ -115,6 +126,7 @@ class Action(BaseModel):
     text: str | None = None
     option: SelectOption | None = None
     is_checked: bool | None = None
+    verified: bool = False
 
     created_at: datetime | None = None
     modified_at: datetime | None = None
@@ -146,6 +158,8 @@ class Action(BaseModel):
                 return WaitAction.model_validate(value)
             elif action_type is ActionType.SOLVE_CAPTCHA:
                 return SolveCaptchaAction.model_validate(value)
+            elif action_type is ActionType.RELOAD_PAGE:
+                return ReloadPageAction.model_validate(value)
             else:
                 raise ValueError(f"Unsupported action type: {action_type}")
         else:
@@ -160,10 +174,18 @@ class DecisiveAction(Action):
     errors: list[UserDefinedError] = []
 
 
+# TODO: consider to implement this as a WebAction in the future
+class ReloadPageAction(Action):
+    action_type: ActionType = ActionType.RELOAD_PAGE
+
+
 class ClickAction(WebAction):
     action_type: ActionType = ActionType.CLICK
     file_url: str | None = None
     download: bool = False
+    x: int | None = None
+    y: int | None = None
+    button: str = "left"
 
     def __repr__(self) -> str:
         return f"ClickAction(element_id={self.element_id}, file_url={self.file_url}, download={self.download})"
@@ -227,6 +249,7 @@ class CheckboxAction(WebAction):
 
 class WaitAction(Action):
     action_type: ActionType = ActionType.WAIT
+    seconds: int = 20
 
 
 class TerminateAction(DecisiveAction):
@@ -239,10 +262,47 @@ class CompleteAction(DecisiveAction):
     data_extraction_goal: str | None = None
 
 
+class ExtractAction(Action):
+    action_type: ActionType = ActionType.EXTRACT
+    data_extraction_goal: str | None = None
+    data_extraction_schema: dict[str, Any] | None = None
+
+
+class ScrollAction(Action):
+    action_type: ActionType = ActionType.SCROLL
+    x: int
+    y: int
+    scroll_x: int
+    scroll_y: int
+
+
+class KeypressAction(Action):
+    action_type: ActionType = ActionType.KEYPRESS
+    keys: list[str] = []
+
+
+class MoveAction(Action):
+    action_type: ActionType = ActionType.MOVE
+    x: int
+    y: int
+
+
+class DragAction(Action):
+    action_type: ActionType = ActionType.DRAG
+    start_x: int
+    start_y: int
+    path: list[tuple[int, int]] = []
+
+
+class VerificationCodeAction(Action):
+    action_type: ActionType = ActionType.VERIFICATION_CODE
+    verification_code: str
+
+
 class ScrapeResult(BaseModel):
     """
     Scraped response from a webpage, including:
     1. JSON representation of what the user is seeing
     """
 
-    scraped_data: dict[str, Any] | list[dict[str, Any]]
+    scraped_data: dict[str, Any] | list | str | None

@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 import commentjson
+import json_repair
 import litellm
 import structlog
 
@@ -57,24 +58,33 @@ def parse_api_response(response: litellm.ModelResponse, add_assistant_prefix: bo
         # Since we prefilled Anthropic response with "{" we need to add it back to the response to have a valid json object:
         if add_assistant_prefix:
             content = "{" + content
-        content = try_to_extract_json_from_markdown_format(content)
-        if not content:
-            raise EmptyLLMResponseError(str(response))
-        return commentjson.loads(content)
-    except Exception as e:
-        if content:
-            LOG.warning(
-                "Failed to parse LLM response. Will retry auto-fixing the response for unescaped quotes.",
-                exc_info=True,
-                content=content,
-            )
-            try:
-                return fix_and_parse_json_string(content)
-            except Exception as e2:
-                LOG.exception("Failed to auto-fix LLM response.", error=str(e2))
-                raise InvalidLLMResponseFormat(str(response)) from e2
 
-        raise InvalidLLMResponseFormat(str(response)) from e
+        return json_repair.loads(content)
+
+    except Exception:
+        LOG.warning(
+            "Failed to parse LLM response using json_repair. Will retry auto-fixing the response for unescaped quotes.",
+            exc_info=True,
+        )
+        try:
+            if not content:
+                raise EmptyLLMResponseError(str(response))
+            content = try_to_extract_json_from_markdown_format(content)
+            return commentjson.loads(content)
+        except Exception as e:
+            if content:
+                LOG.warning(
+                    "Failed to parse LLM response. Will retry auto-fixing the response for unescaped quotes.",
+                    exc_info=True,
+                    content=content,
+                )
+                try:
+                    return fix_and_parse_json_string(content)
+                except Exception as e2:
+                    LOG.exception("Failed to auto-fix LLM response.", error=str(e2))
+                    raise InvalidLLMResponseFormat(str(response)) from e2
+
+            raise InvalidLLMResponseFormat(str(response)) from e
 
 
 def fix_cutoff_json(json_string: str, error_position: int) -> dict[str, Any]:
@@ -118,12 +128,10 @@ def fix_unescaped_quotes_in_json(json_string: str) -> str:
     str: The JSON-like string with unescaped quotation marks within strings.
     """
     escape_char = "\\"
-    # Indices to add the escape character to. Since we're processing the string from left to right, we need to sort
-    # the indices in descending order to avoid index shifting.
-    indices_to_add_escape_char = []
     in_string = False
     escape = False
     json_structure_chars = {",", ":", "}", "]", "{", "["}
+    result = []
 
     i = 0
     while i < len(json_string):
@@ -142,23 +150,22 @@ def fix_unescaped_quotes_in_json(json_string: str) -> str:
                     in_string = False
                 else:
                     # If the next character is not a JSON structure character, the quote is part of the string
-                    # Update the indices to add the escape character with the current index
-                    indices_to_add_escape_char.append(i)
+                    # Add the escape character before the quote
+                    result.append(escape_char)
             else:
                 # Start of the JSON string
                 in_string = True
         else:
             escape = False
+
+        # Append the current character to the result
+        result.append(char)
         i += 1
 
-    # Sort the indices in descending order to avoid index shifting then add the escape character to the string
-    if indices_to_add_escape_char:
+    if len(result) != len(json_string):
         LOG.warning("Unescaped quotes found in JSON string. Adding escape character to fix the issue.")
-    indices_to_add_escape_char.sort(reverse=True)
-    for index in indices_to_add_escape_char:
-        json_string = json_string[:index] + escape_char + json_string[index:]
 
-    return json_string
+    return "".join(result)
 
 
 def fix_and_parse_json_string(json_string: str) -> dict[str, Any]:

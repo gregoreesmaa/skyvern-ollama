@@ -5,7 +5,6 @@ from skyvern.forge.sdk.api.llm.exceptions import (
     DuplicateLLMConfigError,
     InvalidLLMConfigError,
     MissingLLMProviderEnvVarsError,
-    NoProviderEnabledError,
 )
 from skyvern.forge.sdk.api.llm.models import LiteLLMParams, LLMConfig, LLMRouterConfig
 
@@ -38,24 +37,19 @@ class LLMConfigRegistry:
     @classmethod
     def get_config(cls, llm_key: str) -> LLMRouterConfig | LLMConfig:
         if llm_key not in cls._configs:
-            raise InvalidLLMConfigError(llm_key)
+            # If the key is not found in registered configs, treat it as a general model
+            LOG.info("Using general model configuration for unknown LLM key", llm_key=llm_key)
+            if not llm_key:
+                raise InvalidLLMConfigError(f"LLM_KEY not set for {llm_key}")
+            return LLMConfig(
+                llm_key,  # Use the LLM_KEY as the model name
+                ["LLM_API_KEY"],
+                supports_vision=settings.LLM_CONFIG_SUPPORT_VISION,
+                add_assistant_prefix=settings.LLM_CONFIG_ADD_ASSISTANT_PREFIX,
+                max_completion_tokens=settings.LLM_CONFIG_MAX_TOKENS,
+            )
 
         return cls._configs[llm_key]
-
-
-# if none of the LLM providers are enabled, raise an error
-if not any(
-    [
-        settings.ENABLE_OPENAI,
-        settings.ENABLE_ANTHROPIC,
-        settings.ENABLE_AZURE,
-        settings.ENABLE_AZURE_GPT4O_MINI,
-        settings.ENABLE_BEDROCK,
-        settings.ENABLE_GEMINI,
-        settings.ENABLE_OLLAMA,
-    ]
-):
-    raise NoProviderEnabledError()
 
 
 if settings.ENABLE_OPENAI:
@@ -65,6 +59,45 @@ if settings.ENABLE_OPENAI:
             "gpt-4-turbo",
             ["OPENAI_API_KEY"],
             supports_vision=False,
+            add_assistant_prefix=False,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_GPT4_1",
+        LLMConfig(
+            "gpt-4.1",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_GPT4_1_MINI",
+        LLMConfig(
+            "gpt-4.1-mini",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_GPT4_1_NANO",
+        LLMConfig(
+            "gpt-4.1-nano",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_GPT4_5",
+        LLMConfig(
+            "gpt-4.5-preview",
+            ["OPENAI_API_KEY"],
+            supports_vision=True,
             add_assistant_prefix=False,
         ),
     )
@@ -80,7 +113,19 @@ if settings.ENABLE_OPENAI:
     LLMConfigRegistry.register_config(
         "OPENAI_GPT4O",
         LLMConfig(
-            "gpt-4o", ["OPENAI_API_KEY"], supports_vision=True, add_assistant_prefix=False, max_output_tokens=16384
+            "gpt-4o", ["OPENAI_API_KEY"], supports_vision=True, add_assistant_prefix=False, max_completion_tokens=16384
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_O3_MINI",
+        LLMConfig(
+            "o3-mini",
+            ["OPENAI_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+            temperature=None,  # Temperature isn't supported in the O-model series
+            reasoning_effort="high",
         ),
     )
     LLMConfigRegistry.register_config(
@@ -90,7 +135,7 @@ if settings.ENABLE_OPENAI:
             ["OPENAI_API_KEY"],
             supports_vision=True,
             add_assistant_prefix=False,
-            max_output_tokens=16384,
+            max_completion_tokens=16384,
         ),
     )
     LLMConfigRegistry.register_config(
@@ -100,7 +145,37 @@ if settings.ENABLE_OPENAI:
             ["OPENAI_API_KEY"],
             supports_vision=True,
             add_assistant_prefix=False,
-            max_output_tokens=16384,
+            max_completion_tokens=16384,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_O4_MINI",
+        LLMConfig(
+            "o4-mini",
+            ["OPENAI_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+            temperature=None,  # Temperature isn't supported in the O-model series
+            reasoning_effort="high",
+            litellm_params=LiteLLMParams(
+                drop_params=True,  # type: ignore
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "OPENAI_O3",
+        LLMConfig(
+            "o3",
+            ["OPENAI_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+            temperature=None,  # Temperature isn't supported in the O-model series
+            reasoning_effort="high",
+            litellm_params=LiteLLMParams(
+                drop_params=True,  # type: ignore
+            ),
         ),
     )
 
@@ -149,7 +224,17 @@ if settings.ENABLE_ANTHROPIC:
             ["ANTHROPIC_API_KEY"],
             supports_vision=True,
             add_assistant_prefix=True,
-            max_output_tokens=8192,
+            max_completion_tokens=8192,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "ANTHROPIC_CLAUDE3.7_SONNET",
+        LLMConfig(
+            "anthropic/claude-3-7-sonnet-latest",
+            ["ANTHROPIC_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=True,
+            max_completion_tokens=8192,
         ),
     )
 
@@ -267,7 +352,52 @@ if settings.ENABLE_AZURE_GPT4O_MINI:
         ),
     )
 
+if settings.ENABLE_AZURE_O3_MINI:
+    LLMConfigRegistry.register_config(
+        "AZURE_OPENAI_O3_MINI",
+        LLMConfig(
+            f"azure/{settings.AZURE_O3_MINI_DEPLOYMENT}",
+            [
+                "AZURE_O3_MINI_DEPLOYMENT",
+                "AZURE_O3_MINI_API_KEY",
+                "AZURE_O3_MINI_API_BASE",
+                "AZURE_O3_MINI_API_VERSION",
+            ],
+            litellm_params=LiteLLMParams(
+                api_base=settings.AZURE_O3_MINI_API_BASE,
+                api_key=settings.AZURE_O3_MINI_API_KEY,
+                api_version=settings.AZURE_O3_MINI_API_VERSION,
+                model_info={"model_name": "azure/o3-mini"},
+            ),
+            supports_vision=False,
+            add_assistant_prefix=False,
+            max_completion_tokens=16384,
+            temperature=None,  # Temperature isn't supported in the O-model series
+            reasoning_effort="high",
+        ),
+    )
+
 if settings.ENABLE_GEMINI:
+    LLMConfigRegistry.register_config(
+        "GEMINI_FLASH_2_0",
+        LLMConfig(
+            "gemini/gemini-2.0-flash-001",
+            ["GEMINI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=8192,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "GEMINI_FLASH_2_0_LITE",
+        LLMConfig(
+            "gemini/gemini-2.0-flash-lite-preview-02-05",
+            ["GEMINI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=8192,
+        ),
+    )
     LLMConfigRegistry.register_config(
         "GEMINI_PRO",
         LLMConfig(
@@ -275,7 +405,7 @@ if settings.ENABLE_GEMINI:
             ["GEMINI_API_KEY"],
             supports_vision=True,
             add_assistant_prefix=False,
-            max_output_tokens=8192,
+            max_completion_tokens=8192,
         ),
     )
     LLMConfigRegistry.register_config(
@@ -285,7 +415,195 @@ if settings.ENABLE_GEMINI:
             ["GEMINI_API_KEY"],
             supports_vision=True,
             add_assistant_prefix=False,
-            max_output_tokens=8192,
+            max_completion_tokens=8192,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "GEMINI_2.5_PRO_PREVIEW_03_25",
+        LLMConfig(
+            "gemini/gemini-2.5-pro-preview-03-25",
+            ["GEMINI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=1048576,
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "GEMINI_2.5_PRO_EXP_03_25",
+        LLMConfig(
+            "gemini/gemini-2.5-pro-exp-03-25",
+            ["GEMINI_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            max_completion_tokens=1048576,
+        ),
+    )
+
+
+if settings.ENABLE_NOVITA:
+    LLMConfigRegistry.register_config(
+        "NOVITA_DEEPSEEK_R1",
+        LLMConfig(
+            "openai/deepseek/deepseek-r1",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/deepseek/deepseek-r1"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_DEEPSEEK_V3",
+        LLMConfig(
+            "openai/deepseek/deepseek_v3",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/deepseek/deepseek_v3"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_3_70B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.3-70b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.3-70b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_2_1B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.2-1b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.2-1b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_2_3B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.2-3b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.2-3b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_2_11B_VISION",
+        LLMConfig(
+            "openai/meta-llama/llama-3.2-11b-vision-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=True,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.2-11b-vision-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_1_8B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.1-8b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.1-8b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_1_70B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.1-70b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.1-70b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_1_405B",
+        LLMConfig(
+            "openai/meta-llama/llama-3.1-405b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3.1-405b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_8B",
+        LLMConfig(
+            "openai/meta-llama/llama-3-8b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3-8b-instruct"},
+            ),
+        ),
+    )
+    LLMConfigRegistry.register_config(
+        "NOVITA_LLAMA_3_70B",
+        LLMConfig(
+            "openai/meta-llama/llama-3-70b-instruct",
+            ["NOVITA_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base="https://api.novita.ai/v3/openai",
+                api_key=settings.NOVITA_API_KEY,
+                api_version=settings.NOVITA_API_VERSION,
+                model_info={"model_name": "openai/meta-llama/llama-3-70b-instruct"},
+            ),
         ),
     )
 
@@ -296,7 +614,7 @@ if settings.ENABLE_OLLAMA:
             LLMConfig(
                 "ollama/" + settings.OLLAMA_PRIMARY_MODEL,
                 ["OLLAMA_API_BASE"],
-                supports_vision=True,
+                supports_vision=settings.OLLAMA_PRIMARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
                 images_in_user_message=True,
                 num_ctx=settings.OLLAMA_PRIMARY_NUM_CTX,
@@ -309,7 +627,7 @@ if settings.ENABLE_OLLAMA:
             LLMConfig(
                 "ollama/" + settings.OLLAMA_SECONDARY_MODEL,
                 ["OLLAMA_API_BASE"],
-                supports_vision=False,
+                supports_vision=settings.OLLAMA_SECONDARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
                 num_ctx=settings.OLLAMA_SECONDARY_NUM_CTX,
                 temperature=settings.OLLAMA_PRIMARY_TEMPERATURE

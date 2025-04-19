@@ -57,35 +57,52 @@ Skyvern uses a swarm of agents to comprehend a website, and plan and execute its
 6. **Dynamic Auto-complete Agent**: This agent is responsible for filling out dynamic auto-complete forms on a website. It's capable of reading the options presented to it, selecting the appropriate option based on the user's input, and adjusting its inputs based on the feedback from inside the form. Popular examples include: Address forms, university dropdowns, and more.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/skyvern-system-diagram-dark.png" />
-  <img src="docs/images/skyvern-system-diagram-light.png" />
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/skyvern_2_0_system_diagram.png" />
+  <img src="docs/images/skyvern_2_0_system_diagram.png" />
 </picture>
 
 # Demo
 <!-- Redo demo -->
 https://github.com/user-attachments/assets/5cab4668-e8e2-4982-8551-aab05ff73a7f
 
-
-
-
 # Skyvern Cloud
-We offer a managed cloud version of Skyvern that allows you to run Skyvern without having to manage the infrastructure. It allows you to run multiple Skyvern instances in parallel to automate your workflows at scale. In addition, Skyvern cloud comes bundled with anti-bot detection mechanisms, proxy network, and CAPTCHA solving to allow you to complete more complicated workflows.
+We offer a managed cloud version of Skyvern that allows you to run Skyvern without having to manage the infrastructure. It allows you to run multiple Skyvern instances in parallel and comes bundled with anti-bot detection mechanisms, proxy network, and CAPTCHA solvers.
 
 If you'd like to try it out, 
 1. Navigate to [app.skyvern.com](https://app.skyvern.com)
 1. Create an account & Get $5 of credits on us
 1. Kick off your first task and see Skyvern in action!
 
-Here are some tips that may help you on your adventure:
-1. Skyvern is really good at carrying out a single goal. If you give it too many instructions to do, it has a high likelihood of getting confused along the way. 
-2. Being really explicit about goals is very important. For example, if you're generating an insurance quote, let it know very clearly how it can identify it has accomplished its goals. Use words like "COMPLETE" or "TERMINATE" to indicate success and failure modes, respectively.
-3. Workflows can be used if you'd like to do more advanced things such as chaining multiple instructions together, or securely logging in. If you need any help with this, please feel free to book some time with us! We're always happy to help
-
 
 # Quickstart
 This quickstart guide will walk you through getting Skyvern up and running on your local machine. 
 
-## Docker Compose setup (Recommended)
+## Local
+> ⚠️ **REQUIREMENT**: This project requires Python 3.11 ⚠️
+
+1. **Install Skyvern**
+	```bash
+	pip install skyvern
+	```
+
+2. **Configure Skyvern** Run the setup wizard which will guide you through the configuration process, including Skyvern [MCP](https://github.com/Skyvern-AI/skyvern/blob/main/integrations/mcp/README.md) integration. This will generate a `.env` as the configuration settings file.
+	```bash
+	skyvern init
+	```
+
+3. **Launch the Skyvern Server** 
+
+	```bash
+	skyvern run server
+	```
+
+4. **Launch the Skyvern UI**
+
+```bash
+skyvern run ui
+```
+
+## Docker Compose setup
 
 1. Make sure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running on your machine
 1. Make sure you don't have postgres running locally (Run `docker ps` to check)
@@ -97,58 +114,29 @@ This quickstart guide will walk you through getting Skyvern up and running on yo
    ```
 3. Navigate to `http://localhost:8080` in your browser to start using the UI
 
+## Model Context Protocol (MCP)
+See the MCP documentation [here](https://github.com/Skyvern-AI/skyvern/blob/main/integrations/mcp/README.md)
 
-## Full Setup (Contributors) - Prerequisites 
+## Prompting Tips
 
-### :warning: :warning: MAKE SURE YOU ARE USING PYTHON 3.11 :warning: :warning:
-:warning: :warning: Only well-tested on MacOS :warning: :warning:
+Here are some tips that may help you on your adventure:
+1. Skyvern is really good at carrying out a single goal. If you give it too many instructions to do, it has a high likelihood of hallucinating along the way. 
+2. Being really explicit about goals is very important. For example, if you're generating an insurance quote, let it know very clearly how it can identify it has accomplished its goals. Use words like "COMPLETE" or "TERMINATE" to indicate success and failure modes, respectively.
+3. Workflows can be used if you'd like to do more advanced things such as chaining multiple instructions together, or securely logging in. If you need any help with this, please feel free to book some time with us! We're always happy to help
 
-Before you begin, make sure you have the following installed:
-
-- [Brew (if you're on a Mac)](https://brew.sh/)
-- [Poetry](https://python-poetry.org/docs/#installation)
-    - `brew install poetry`
-- [node](https://nodejs.org/en/download/)
-- [Docker](https://docs.docker.com/engine/install/)
-  
-
-Note: Our setup script does these two for you, but they are here for reference.
-- [Python 3.11](https://www.python.org/downloads/)
-    - `poetry env use 3.11`
-- [PostgreSQL 14](https://www.postgresql.org/download/) (if you're on a Mac, setup script will install it for you if you have homebrew installed)
-    - `brew install postgresql`
-
-## Setup (Contributors)
-1. Clone the repository and navigate to the root directory
-1. Open Docker Desktop (Works for Windows, macOS, and Linux) or run Docker Daemon
-1. Run the setup script to install the necessary dependencies and setup your environment
-    ```bash
-    ./setup.sh
-    ```
-1. Start the server
-    ```bash
-    ./run_skyvern.sh
-    ```
-1. You can start sending requests to the server, but we built a simple UI to help you get started. To start the UI, run the following command:
-    ```bash
-    ./run_ui.sh
-    ```
-1. Navigate to `http://localhost:8080` in your browser to start using the UI
-
-## Additional Setup for Contributors
-If you're looking to contribute to Skyvern, you'll need to install the pre-commit hooks to ensure code quality and consistency. You can do this by running the following command:
-```bash
-pre-commit install
-```
 
 # Supported Functionality
+
+## Skyvern 2.0
+Skyvern 2.0 is a major overhaul of Skyvern that includes a multi-agent architecture with a planner + validator agent, allowing Skyvern to complete more complex tasks with a zero-shot prompt.
+
 ## Skyvern Tasks
 Tasks are the fundamental building block inside Skyvern. Each task is a single request to Skyvern, instructing it to navigate through a website and accomplish a specific goal. 
 
-Tasks require you to specify a `url`, `navigation_goal`, and optionally `data_extraction_goal` if you'd like to extract data from the website, and a `navigation_payload` if you'd like to provide additional context to help Skyvern fill information or answer questions presented by a website.
+Tasks require you to specify a `url`, `prompt`, and can optionally include a `data schema` (if you want the output to conform to a specific schema) and `error codes` (if you want Skyvern to stop running in specific situations). 
 
 <p align="center">
-  <img src="docs/images/task_creation_form_example.png"/>
+  <img src="docs/images/skyvern_2_0_screenshot.png"/>
 </p>
 
 
@@ -160,12 +148,15 @@ For example, if you wanted to download all invoices newer than January 1st, you 
 Another example is if you wanted to automate purchasing products from an e-commerce store, you could create a workflow that first navigated to the desired product, then added it to a cart. Second, it would navigate to the cart and validate the cart state. Finally, it would go through the checkout process to purchase the items.
 
 Supported workflow features include:
-1. Tasks (+ chained tasks)
+1. Navigation
+1. Action
+1. Data Extraction
 1. Loops
 1. File parsing
 1. Uploading files to block storage
 1. Sending emails
 1. Text Prompts
+1. Tasks (general)
 1. (Coming soon) Conditionals
 1. (Coming soon) Custom Code Block
 
@@ -177,18 +168,18 @@ Supported workflow features include:
 Skyvern allows you to livestream the viewport of the browser to your local machine so that you can see exactly what Skyvern is doing on the web. This is useful for debugging and understanding how Skyvern is interacting with a website, and intervening when necessary
 
 ## Form Filling
-Skyvern is natively capable of filling out form inputs on websites. Passing in information via the `navigation_goal` or `navigation_payload` will allow Skyvern to comprehend the information and fill out the form accordingly.
+Skyvern is natively capable of filling out form inputs on websites. Passing in information via the `navigation_goal` will allow Skyvern to comprehend the information and fill out the form accordingly.
 
 ## Data Extraction
-Skyvern is also capable of extracting data from a website. Specifying a `data_extraction_goal` will allow Skyvern to extract the data and return it to you in the response.
+Skyvern is also capable of extracting data from a website.
 
-You can also specify a `data_extraction_schema` to tell Skyvern exactly what data you'd like to extract from the website, in jsonc format. Skyvern's output will be structured in accordance to the supplied schema.
+You can also specify a `data_extraction_schema` directly within the main prompt to tell Skyvern exactly what data you'd like to extract from the website, in jsonc format. Skyvern's output will be structured in accordance to the supplied schema.
 
 ## File Downloading
-Skyvern is also capable of downloading files from a website. Specifying a `file_download_goal` will allow Skyvern to download the file and return a link to the file in the response.
+Skyvern is also capable of downloading files from a website. All downloaded files are automatically uploaded to block storage (if configured), and you can access them via the UI.
 
-## Authentication
-Skyvern supports a number of different authentication methods to make it easier to automate tasks behind a login. 
+## Authentication (Beta)
+Skyvern supports a number of different authentication methods to make it easier to automate tasks behind a login. If you'd like to try it out, please reach out to us [via email](mailto:founders@skyvern.com) or [discord](https://discord.gg/fG2XXEuQX3).
 
 ### Password Manager Integrations
 Skyvern currently supports the following password manager integrations:
@@ -212,11 +203,6 @@ Examples include:
 # Real-world examples of Skyvern
 We love to see how Skyvern is being used in the wild. Here are some examples of how Skyvern is being used to automate workflows in the real world. Please open PRs to add your own examples!
 
-You'll need to have Skyvern running locally if you want to try these examples out. Please run the following command after going through the quickstart guide:
-```
-./run_skyvern.sh
-```
-
 ## Invoice Downloading on many different websites
 [Book a demo to see it live](https://meetings.hubspot.com/skyvern/demo)
 
@@ -225,46 +211,90 @@ You'll need to have Skyvern running locally if you want to try these examples ou
 </p>
 
 ## Automate the job application process
-[💡 See it in action](https://app.skyvern.com/create/job_application)
+[💡 See it in action](https://app.skyvern.com/tasks/create/job_application)
 <p align="center">
   <img src="docs/images/job_application_demo.gif"/>
 </p>
 
 ## Automate materials procurement for a manufacturing company
-[💡 See it in action](https://app.skyvern.com/create/finditparts)
+[💡 See it in action](https://app.skyvern.com/tasks/create/finditparts)
 <p align="center">
   <img src="docs/images/finditparts_recording_crop.gif"/>
 </p>
 
 ## Navigating to government websites to register accounts or fill out forms 
-[💡 See it in action](https://app.skyvern.com/create/california_edd)
+[💡 See it in action](https://app.skyvern.com/tasks/create/california_edd)
 <p align="center">
   <img src="docs/images/edd_services.gif"/>
 </p>
 <!-- Add example of delaware entity lookups x2 -->
 
 ## Filling out random contact us forms
-[💡 See it in action](https://app.skyvern.com/create/contact_us_forms)
+[💡 See it in action](https://app.skyvern.com/tasks/create/contact_us_forms)
 <p align="center">
   <img src="docs/images/contact_forms.gif"/>
 </p>
 
 
 ## Retrieving insurance quotes from insurance providers in any language
-[💡 See it in action](https://app.skyvern.com/create/bci_seguros)
+[💡 See it in action](https://app.skyvern.com/tasks/create/bci_seguros)
 <p align="center">
   <img src="docs/images/bci_seguros_recording.gif"/>
 </p>
 
-[💡 See it in action](https://app.skyvern.com/create/geico)
+[💡 See it in action](https://app.skyvern.com/tasks/create/geico)
 
 <p align="center">
   <img src="docs/images/geico_shu_recording_cropped.gif"/>
 </p>
 
+# Contributor Setup
+### Prerequisites 
+
+> :warning: :warning: MAKE SURE YOU ARE USING PYTHON 3.11 :warning: :warning:
+:warning: :warning: Only well-tested on MacOS :warning: :warning:
+
+Before you begin, make sure you have the following installed:
+
+- [Brew (if you're on a Mac)](https://brew.sh/)
+- [Poetry](https://python-poetry.org/docs/#installation)
+    - `brew install poetry`
+- [node](https://nodejs.org/en/download/)
+- [Docker](https://docs.docker.com/engine/install/)
+  
+
+Note: Our setup script does these two for you, but they are here for reference.
+- [Python 3.11](https://www.python.org/downloads/)
+    - `poetry env use 3.11`
+- [PostgreSQL 14](https://www.postgresql.org/download/) (if you're on a Mac, setup script will install it for you if you have homebrew installed)
+    - `brew install postgresql`
+
+## Setup (Contributors)
+1. Clone the repository and navigate to the root directory
+1. Open Docker Desktop (Works for Windows, macOS, and Linux) or run Docker Daemon
+1. Run the setup script to install the necessary dependencies and setup your environment
+    ```bash
+    skyvern/scripts/setup.sh
+    ```
+1. Start the server
+    ```bash
+    ./run_skyvern.sh
+    ```
+1. You can start sending requests to the server, but we built a simple UI to help you get started. To start the UI, run the following command:
+    ```bash
+    ./run_ui.sh
+    ```
+1. Navigate to `http://localhost:8080` in your browser to start using the UI
+
+## Additional Setup for Contributors
+If you're looking to contribute to Skyvern, you'll need to install the pre-commit hooks to ensure code quality and consistency. You can do this by running the following command:
+```bash
+pre-commit install
+```
+
 # Documentation
 
-More extensive documentation can be found on our [documentation website](https://docs.skyvern.com). Please let us know if something is unclear or missing by opening an issue or reaching out to us [via email](mailto:founders@skyvern.com) or [discord](https://discord.gg/fG2XXEuQX3).
+More extensive documentation can be found on our [docs page](https://docs.skyvern.com). Please let us know if something is unclear or missing by opening an issue or reaching out to us [via email](mailto:founders@skyvern.com) or [discord](https://discord.gg/fG2XXEuQX3).
 
 # Supported LLMs
 | Provider | Supported Models |
@@ -276,33 +306,38 @@ More extensive documentation can be found on our [documentation website](https:/
 | Ollama | Coming soon (contributions welcome) |
 | Gemini | Coming soon (contributions welcome) |
 | Llama 3.2 | Coming soon (contributions welcome) | 
+| Novita AI | Llama 3.1 (8B, 70B), Llama 3.2 (1B, 3B, 11B Vision) |
 
 #### Environment Variables
-| Variable                       | Description                                                                                                                                                                                | Type    | Sample Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `ENABLE_OPENAI`                | Register OpenAI models                                                                                                                                                                     | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `ENABLE_ANTHROPIC`             | Register Anthropic models                                                                                                                                                                  | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `ENABLE_AZURE`                 | Register Azure OpenAI models                                                                                                                                                               | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `ENABLE_BEDROCK`               | Register AWS Bedrock models. To use AWS Bedrock, you need to make sure your [AWS configurations](https://github.com/boto/boto3?tab=readme-ov-file#using-boto3) are set up correctly first. | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `ENABLE_GEMINI`                | Register Gemini models                                                                                                                                                                     | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `ENABLE_OLLAMA`                | Register Ollama models                                                                                                                                                                     | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `LLM_KEY`                      | The name of the model you want to use                                                                                                                                                      | String  | Currently supported llm keys: `OPENAI_GPT4_TURBO`, `OPENAI_GPT4V`, `OPENAI_GPT4O`, `OPENAI_GPT4O_MINI`, `ANTHROPIC_CLAUDE3`, `ANTHROPIC_CLAUDE3_OPUS`, `ANTHROPIC_CLAUDE3_SONNET`, `ANTHROPIC_CLAUDE3_HAIKU`, `ANTHROPIC_CLAUDE3.5_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_OPUS`, `BEDROCK_ANTHROPIC_CLAUDE3_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_HAIKU`, `BEDROCK_ANTHROPIC_CLAUDE3.5_SONNET`, `AZURE_OPENAI`, `GEMINI_PRO`, `GEMINI_FLASH`, `BEDROCK_AMAZON_NOVA_PRO`, `BEDROCK_AMAZON_NOVA_LITE` |
-| `SECONDARY_LLM_KEY`            | The name of the model for mini agents skyvern runs with                                                                                                                                    | String  | Currently supported llm keys: `OPENAI_GPT4_TURBO`, `OPENAI_GPT4V`, `OPENAI_GPT4O`, `OPENAI_GPT4O_MINI`, `ANTHROPIC_CLAUDE3`, `ANTHROPIC_CLAUDE3_OPUS`, `ANTHROPIC_CLAUDE3_SONNET`, `ANTHROPIC_CLAUDE3_HAIKU`, `ANTHROPIC_CLAUDE3.5_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_OPUS`, `BEDROCK_ANTHROPIC_CLAUDE3_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_HAIKU`, `BEDROCK_ANTHROPIC_CLAUDE3.5_SONNET`, `AZURE_OPENAI`, `GEMINI_PRO`, `GEMINI_FLASH`                                                        |
-| `OPENAI_API_KEY`               | OpenAI API Key                                                                                                                                                                             | String  | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `OPENAI_API_BASE`              | OpenAI API Base, optional                                                                                                                                                                  | String  | `https://openai.api.base`                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `OPENAI_ORGANIZATION`          | OpenAI Organization ID, optional                                                                                                                                                           | String  | `your-org-id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `ANTHROPIC_API_KEY`            | Anthropic API key                                                                                                                                                                          | String  | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `AZURE_API_KEY`                | Azure deployment API key                                                                                                                                                                   | String  | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `AZURE_DEPLOYMENT`             | Azure OpenAI Deployment Name                                                                                                                                                               | String  | `skyvern-deployment`                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `AZURE_API_BASE`               | Azure deployment api base url                                                                                                                                                              | String  | `https://skyvern-deployment.openai.azure.com/`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `AZURE_API_VERSION`            | Azure API Version                                                                                                                                                                          | String  | `2024-02-01`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `GEMINI_API_KEY`               | Gemini API Key                                                                                                                                                                             | String  | `your_google_gemini_api_key`                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `OLLAMA_PRIMARY_MODEL`         | Name of Ollama model using vision                                                                                                                                                          | String  | `llama3.2-vision:90b`                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `OLLAMA_PRIMARY_NUM_CTX`       | Context length of primary Ollama model (if too short, then starts to forget instructions)                                                                                                  | Integer | `32768`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `OLLAMA_PRIMARY_TEMPERATURE`   | Temperature of primary Ollama model (0...1, higher = more creative)                                                                                                                        | Float   | `0.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `OLLAMA_SECONDARY_MODEL`       | Name of Ollama secondary model without vision                                                                                                                                              | String  | `llama3.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `OLLAMA_SECONDARY_NUM_CTX`     | Context length of secondary Ollama model (if too short, then starts to forget instructions)                                                                                                | Integer | `32768`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `OLLAMA_SECONDARY_TEMPERATURE` | Temperature of secondary Ollama model (0...1, higher = more creative)                                                                                                                      | Float   | `0.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Variable                           | Description                                                                                                                                                                                | Type | Sample Value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ENABLE_OPENAI`                    | Register OpenAI models                                                                                                                                                                     | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ENABLE_ANTHROPIC`                 | Register Anthropic models                                                                                                                                                                  | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ENABLE_AZURE`                     | Register Azure OpenAI models                                                                                                                                                               | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ENABLE_BEDROCK`                   | Register AWS Bedrock models. To use AWS Bedrock, you need to make sure your [AWS configurations](https://github.com/boto/boto3?tab=readme-ov-file#using-boto3) are set up correctly first. | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ENABLE_GEMINI`                    | Register Gemini models                                                                                                                                                                     | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `ENABLE_NOVITA`                    | Register Novita AI models                                                                                                                                                                  | Boolean | `true`, `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `LLM_KEY`                          | The name of the model you want to use                                                                                                                                                      | String | Currently supported llm keys: `OPENAI_GPT4_TURBO`, `OPENAI_GPT4V`, `OPENAI_GPT4O`, `OPENAI_GPT4O_MINI`, `ANTHROPIC_CLAUDE3`, `ANTHROPIC_CLAUDE3_OPUS`, `ANTHROPIC_CLAUDE3_SONNET`, `ANTHROPIC_CLAUDE3_HAIKU`, `ANTHROPIC_CLAUDE3.5_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_OPUS`, `BEDROCK_ANTHROPIC_CLAUDE3_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_HAIKU`, `BEDROCK_ANTHROPIC_CLAUDE3.5_SONNET`, `AZURE_OPENAI`, `GEMINI_PRO`, `GEMINI_FLASH`, `BEDROCK_AMAZON_NOVA_PRO`, `BEDROCK_AMAZON_NOVA_LITE`                                                                                                                                                                                                              |
+| `SECONDARY_LLM_KEY`                | The name of the model for mini agents skyvern runs with                                                                                                                                    | String | Currently supported llm keys: `OPENAI_GPT4_TURBO`, `OPENAI_GPT4V`, `OPENAI_GPT4O`, `OPENAI_GPT4O_MINI`, `ANTHROPIC_CLAUDE3`, `ANTHROPIC_CLAUDE3_OPUS`, `ANTHROPIC_CLAUDE3_SONNET`, `ANTHROPIC_CLAUDE3_HAIKU`, `ANTHROPIC_CLAUDE3.5_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_OPUS`, `BEDROCK_ANTHROPIC_CLAUDE3_SONNET`, `BEDROCK_ANTHROPIC_CLAUDE3_HAIKU`, `BEDROCK_ANTHROPIC_CLAUDE3.5_SONNET`, `AZURE_OPENAI`, `GEMINI_PRO`, `GEMINI_FLASH`, `NOVITA_DEEPSEEK_R1`, `NOVITA_DEEPSEEK_V3`, `NOVITA_LLAMA_3_3_70B`, `NOVITA_LLAMA_3_2_1B`, `NOVITA_LLAMA_3_2_3B`, `NOVITA_LLAMA_3_2_11B_VISION`, `NOVITA_LLAMA_3_1_8B`, `NOVITA_LLAMA_3_1_70B`, `NOVITA_LLAMA_3_1_405B`, `NOVITA_LLAMA_3_8B`, `NOVITA_LLAMA_3_70B` |
+| `OPENAI_API_KEY`                   | OpenAI API Key                                                                                                                                                                             | String | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `OPENAI_API_BASE`                  | OpenAI API Base, optional                                                                                                                                                                  | String | `https://openai.api.base`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `OPENAI_ORGANIZATION`              | OpenAI Organization ID, optional                                                                                                                                                           | String | `your-org-id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `ANTHROPIC_API_KEY`                | Anthropic API key                                                                                                                                                                          | String | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `AZURE_API_KEY`                    | Azure deployment API key                                                                                                                                                                   | String | `sk-1234567890`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `AZURE_DEPLOYMENT`                 | Azure OpenAI Deployment Name                                                                                                                                                               | String | `skyvern-deployment`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `AZURE_API_BASE`                   | Azure deployment api base url                                                                                                                                                              | String | `https://skyvern-deployment.openai.azure.com/`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `AZURE_API_VERSION`                | Azure API Version                                                                                                                                                                          | String | `2024-02-01`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GEMINI_API_KEY`                   | Gemini API Key                                                                                                                                                                             | String | `your_google_gemini_api_key`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `OLLAMA_API_HOST`                  | Host of Primary Ollama model's API                                                                                                                                                         | String  | `localhost:1234`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `OLLAMA_PRIMARY_MODEL`             | Name of primary Ollama model                                                                                                                                                               | String  | `llama3.2-vision:90b`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `OLLAMA_PRIMARY_SUPPORTS_VISION`   | Whether or not primary Ollama model supports vision                                                                                                                                        | String  | `true`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `OLLAMA_PRIMARY_NUM_CTX`           | Context length of primary Ollama model (if too short, then starts to forget instructions)                                                                                                  | Integer | `32768`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `OLLAMA_PRIMARY_TEMPERATURE`       | Temperature of primary Ollama model (0...1, higher = more creative)                                                                                                                        | Float   | `0.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `OLLAMA_SECONDARY_API_HOST`        | Host of Ollama model's API                                                                                                                                                                 | String  | `localhost:1234`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `OLLAMA_SECONDARY_MODEL`           | Name of Ollama secondary model without vision                                                                                                                                              | String  | `llama3.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `OLLAMA_SECONDARY_SUPPORTS_VISION` | Whether or not secondary Ollama model supports vision                                                                                                                                      | String  | `false`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `OLLAMA_SECONDARY_NUM_CTX`         | Context length of secondary Ollama model (if too short, then starts to forget instructions)                                                                                                | Integer | `32768`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `OLLAMA_SECONDARY_TEMPERATURE`     | Temperature of secondary Ollama model (0...1, higher = more creative)                                                                                                                      | Float   | `0.2`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 # Feature Roadmap
 This is our planned roadmap for the next few months. If you have any suggestions or would like to see a feature added, please don't hesitate to reach out to us [via email](mailto:founders@skyvern.com) or [discord](https://discord.gg/fG2XXEuQX3).
@@ -315,10 +350,10 @@ This is our planned roadmap for the next few months. If you have any suggestions
 - [x] **Workflow UI Builder** - Introduce a UI to allow users to build and analyze workflows visually
 - [x] **Chrome Viewport streaming** - Introduce a way to live-stream the Chrome viewport to the user's browser (as a part of the self-serve UI)
 - [x] **Past Runs UI** - Deprecate the Streamlit UI in favour of a React-based UI that allows you to visualize past runs and their results
+- [X] **Auto workflow builder ("Observer") mode** - Allow Skyvern to auto-generate workflows as it's navigating the web to make it easier to build new workflows
 - [ ] **Prompt Caching** - Introduce a caching layer to the LLM calls to dramatically reduce the cost of running Skyvern (memorize past actions and repeat them!)
 - [ ] **Web Evaluation Dataset** - Integrate Skyvern with public benchmark tests to track the quality of our models over time
 - [ ] **Improved Debug mode** - Allow Skyvern to plan its actions and get "approval" before running them, allowing you to debug what it's doing and more easily iterate on the prompt
-- [ ] **Auto workflow builder ("Observer") mode** - Allow Skyvern to auto-generate workflows as it's navigating the web to make it easier to build new workflows
 - [ ] **Chrome Extension** - Allow users to interact with Skyvern through a Chrome extension (incl voice mode, saving tasks, etc.)
 - [ ] **Skyvern Action Recorder** - Allow Skyvern to watch a user complete a task and then automatically generate a workflow for it
 - [ ] **Interactable Livestream** - Allow users to interact with the livestream in real-time to intervene when necessary (such as manually submitting sensitive forms)

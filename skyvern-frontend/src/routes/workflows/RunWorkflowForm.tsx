@@ -17,15 +17,15 @@ import { useCredentialGetter } from "@/hooks/useCredentialGetter";
 import { copyText } from "@/util/copyText";
 import { apiBaseUrl } from "@/util/env";
 import { CopyIcon, PlayIcon, ReloadIcon } from "@radix-ui/react-icons";
-import { ToastAction } from "@radix-ui/react-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import fetchToCurl from "fetch-to-curl";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { WorkflowParameter } from "./types/workflowTypes";
 import { WorkflowParameterInput } from "./WorkflowParameterInput";
-
+import { AxiosError } from "axios";
+import { getLabelForWorkflowParameterType } from "./editor/workflowEditorUtils";
 type Props = {
   workflowParameters: Array<WorkflowParameter>;
   initialValues: Record<string, unknown>;
@@ -107,6 +107,7 @@ function RunWorkflowForm({
 }: Props) {
   const { workflowPermanentId } = useParams();
   const credentialGetter = useCredentialGetter();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const form = useForm<RunWorkflowFormType>({
     defaultValues: {
@@ -131,27 +132,23 @@ function RunWorkflowForm({
         variant: "success",
         title: "Workflow run started",
         description: "The workflow run has been started successfully",
-        action: (
-          <ToastAction altText="View">
-            <Button asChild>
-              <Link
-                to={`/workflows/${workflowPermanentId}/${response.data.workflow_run_id}/overview`}
-              >
-                View
-              </Link>
-            </Button>
-          </ToastAction>
-        ),
       });
       queryClient.invalidateQueries({
         queryKey: ["workflowRuns"],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["runs"],
+      });
+      navigate(
+        `/workflows/${workflowPermanentId}/${response.data.workflow_run_id}/overview`,
+      );
     },
-    onError: (error) => {
+    onError: (error: AxiosError) => {
+      const detail = (error.response?.data as { detail?: string })?.detail;
       toast({
         variant: "destructive",
         title: "Failed to start workflow run",
-        description: error.message,
+        description: detail ?? error.message,
       });
     },
   });
@@ -209,7 +206,9 @@ function RunWorkflowForm({
                             <div className="flex items-center gap-2 text-lg">
                               {parameter.key}
                               <span className="text-sm text-slate-400">
-                                {parameter.workflow_parameter_type}
+                                {getLabelForWorkflowParameterType(
+                                  parameter.workflow_parameter_type,
+                                )}
                               </span>
                             </div>
                             <h2 className="text-sm text-slate-400">

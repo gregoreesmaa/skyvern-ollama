@@ -6,12 +6,25 @@ import { AddNodeProps } from "../FlowRenderer";
 import { WorkflowBlockNode } from "../nodes";
 import { WorkflowBlockIcon } from "../nodes/WorkflowBlockIcon";
 
+const enableCodeBlock = import.meta.env.VITE_ENABLE_CODE_BLOCK === "true";
+
 const nodeLibraryItems: Array<{
   nodeType: NonNullable<WorkflowBlockNode["type"]>;
   icon: JSX.Element;
   title: string;
   description: string;
 }> = [
+  {
+    nodeType: "login",
+    icon: (
+      <WorkflowBlockIcon
+        workflowBlockType={WorkflowBlockTypes.Login}
+        className="size-6"
+      />
+    ),
+    title: "Login Block",
+    description: "Login to a website",
+  },
   {
     nodeType: "navigation",
     icon: (
@@ -22,6 +35,17 @@ const nodeLibraryItems: Array<{
     ),
     title: "Navigation Block",
     description: "Navigate on the page",
+  },
+  {
+    nodeType: "taskv2",
+    icon: (
+      <WorkflowBlockIcon
+        workflowBlockType={WorkflowBlockTypes.Taskv2}
+        className="size-6"
+      />
+    ),
+    title: "Navigation v2 Block",
+    description: "Navigate on the page with Skyvern 2.0",
   },
   {
     nodeType: "action",
@@ -67,6 +91,18 @@ const nodeLibraryItems: Array<{
     title: "Task Block",
     description: "Takes actions or extracts information",
   },
+
+  {
+    nodeType: "url",
+    icon: (
+      <WorkflowBlockIcon
+        workflowBlockType={WorkflowBlockTypes.URL}
+        className="size-6"
+      />
+    ),
+    title: "Go to URL Block",
+    description: "Navigates to a URL",
+  },
   {
     nodeType: "textPrompt",
     icon: (
@@ -100,16 +136,17 @@ const nodeLibraryItems: Array<{
     title: "For Loop Block",
     description: "Repeats nested elements",
   },
-  // temporarily removed
-  // {
-  //   nodeType: "codeBlock",
-  //   icon: <WorkflowBlockIcon
-  //   workflowBlockType={WorkflowBlockTypes.Code}
-  //   className="size-6"
-  // />,
-  //   title: "Code Block",
-  //   description: "Executes Python code",
-  // },
+  {
+    nodeType: "codeBlock",
+    icon: (
+      <WorkflowBlockIcon
+        workflowBlockType={WorkflowBlockTypes.Code}
+        className="size-6"
+      />
+    ),
+    title: "Code Block",
+    description: "Executes Python code",
+  },
   {
     nodeType: "fileParser",
     icon: (
@@ -120,6 +157,17 @@ const nodeLibraryItems: Array<{
     ),
     title: "File Parser Block",
     description: "Downloads and parses a file",
+  },
+  {
+    nodeType: "pdfParser",
+    icon: (
+      <WorkflowBlockIcon
+        workflowBlockType={WorkflowBlockTypes.PDFParser}
+        className="size-6"
+      />
+    ),
+    title: "PDF Parser Block",
+    description: "Downloads and parses a PDF file with an optional data schema",
   },
   // disabled
   // {
@@ -134,15 +182,15 @@ const nodeLibraryItems: Array<{
   //   description: "Downloads a file from S3",
   // },
   {
-    nodeType: "upload",
+    nodeType: "fileUpload",
     icon: (
       <WorkflowBlockIcon
-        workflowBlockType={WorkflowBlockTypes.UploadToS3}
+        workflowBlockType={WorkflowBlockTypes.FileUpload}
         className="size-6"
       />
     ),
-    title: "Upload Block",
-    description: "Uploads a file to S3",
+    title: "File Upload Block",
+    description: "Uploads downloaded files to where you want.",
   },
   {
     nodeType: "fileDownload",
@@ -154,17 +202,6 @@ const nodeLibraryItems: Array<{
     ),
     title: "File Download Block",
     description: "Download a file",
-  },
-  {
-    nodeType: "login",
-    icon: (
-      <WorkflowBlockIcon
-        workflowBlockType={WorkflowBlockTypes.Login}
-        className="size-6"
-      />
-    ),
-    title: "Login Block",
-    description: "Login to a website",
   },
   {
     nodeType: "wait",
@@ -197,7 +234,7 @@ function WorkflowNodeLibraryPanel({ onNodeClick, first }: Props) {
       <div className="space-y-4">
         <header className="space-y-2">
           <div className="flex justify-between">
-            <h1 className="text-lg">Node Library</h1>
+            <h1 className="text-lg">Block Library</h1>
             {!first && (
               <Cross2Icon
                 className="size-6 cursor-pointer"
@@ -209,7 +246,7 @@ function WorkflowNodeLibraryPanel({ onNodeClick, first }: Props) {
           </div>
           <span className="text-sm text-slate-400">
             {first
-              ? "Click on the node type to add your first node"
+              ? "Click on the node type to add your first block"
               : "Click on the node type you want to add"}
           </span>
         </header>
@@ -221,6 +258,9 @@ function WorkflowNodeLibraryPanel({ onNodeClick, first }: Props) {
                   workflowPanelData?.disableLoop &&
                   item.nodeType === "loop"
                 ) {
+                  return null;
+                }
+                if (!enableCodeBlock && item.nodeType === "codeBlock") {
                   return null;
                 }
                 return (
@@ -241,7 +281,7 @@ function WorkflowNodeLibraryPanel({ onNodeClick, first }: Props) {
                     }}
                   >
                     <div className="flex gap-2">
-                      <div className="flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded border border-slate-600">
+                      <div className="flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center rounded border border-slate-600">
                         {item.icon}
                       </div>
                       <div className="flex flex-col gap-1">
@@ -253,7 +293,7 @@ function WorkflowNodeLibraryPanel({ onNodeClick, first }: Props) {
                         </span>
                       </div>
                     </div>
-                    <PlusIcon className="size-6" />
+                    <PlusIcon className="size-6 shrink-0" />
                   </div>
                 );
               })}

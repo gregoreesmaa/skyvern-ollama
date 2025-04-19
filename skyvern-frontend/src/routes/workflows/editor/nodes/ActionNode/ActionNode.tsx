@@ -8,13 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useDeleteNodeCallback } from "@/routes/workflows/hooks/useDeleteNodeCallback";
 import { useNodeLabelChangeHandler } from "@/routes/workflows/hooks/useLabelChangeHandler";
-import { Handle, NodeProps, Position, useReactFlow } from "@xyflow/react";
+import {
+  Handle,
+  NodeProps,
+  Position,
+  useEdges,
+  useNodes,
+  useReactFlow,
+} from "@xyflow/react";
 import { useState } from "react";
 import { EditableNodeTitle } from "../components/EditableNodeTitle";
 import { NodeActionMenu } from "../NodeActionMenu";
 import type { ActionNode } from "./types";
 import { HelpTooltip } from "@/components/HelpTooltip";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { errorMappingExampleValue } from "../types";
 import { CodeEditor } from "@/routes/workflows/components/CodeEditor";
@@ -24,6 +30,10 @@ import { WorkflowBlockInputTextarea } from "@/components/WorkflowBlockInputTexta
 import { WorkflowBlockInput } from "@/components/WorkflowBlockInput";
 import { WorkflowBlockIcon } from "../WorkflowBlockIcon";
 import { WorkflowBlockTypes } from "@/routes/workflows/types/workflowTypes";
+import { AppNode } from "..";
+import { getAvailableOutputParameterKeys } from "../../workflowEditorUtils";
+import { ParametersMultiSelect } from "../TaskNode/ParametersMultiSelect";
+import { useIsFirstBlockInWorkflow } from "../../hooks/useIsFirstNodeInWorkflow";
 
 const urlTooltip =
   "The URL Skyvern is navigating to. Leave this field blank to pick up from where the last block left off.";
@@ -43,7 +53,6 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
     url: data.url,
     navigationGoal: data.navigationGoal,
     errorCodeMapping: data.errorCodeMapping,
-    maxRetries: data.maxRetries,
     allowDownloads: data.allowDownloads,
     continueOnFailure: data.continueOnFailure,
     cacheActions: data.cacheActions,
@@ -53,6 +62,10 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
   });
   const deleteNodeCallback = useDeleteNodeCallback();
 
+  const nodes = useNodes<AppNode>();
+  const edges = useEdges();
+  const outputParameterKeys = getAvailableOutputParameterKeys(nodes, edges, id);
+
   function handleChange(key: string, value: unknown) {
     if (!editable) {
       return;
@@ -60,6 +73,8 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
     setInputs({ ...inputs, [key]: value });
     updateNodeData(id, { [key]: value });
   }
+
+  const isFirstWorkflowBlock = useIsFirstBlockInWorkflow({ id });
 
   return (
     <div>
@@ -103,10 +118,18 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
         </header>
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <Label className="text-xs text-slate-300">URL</Label>
-              <HelpTooltip content={urlTooltip} />
+            <div className="flex justify-between">
+              <div className="flex gap-2">
+                <Label className="text-xs text-slate-300">URL</Label>
+                <HelpTooltip content={urlTooltip} />
+              </div>
+              {isFirstWorkflowBlock ? (
+                <div className="flex justify-end text-xs text-slate-400">
+                  Tip: Use the {"+"} button to add parameters!
+                </div>
+              ) : null}
             </div>
+
             <WorkflowBlockInputTextarea
               nodeId={id}
               onChange={(value) => {
@@ -149,30 +172,12 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
             </AccordionTrigger>
             <AccordionContent className="pl-6 pr-1 pt-1">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Label className="text-xs font-normal text-slate-300">
-                      Max Retries
-                    </Label>
-                    <HelpTooltip
-                      content={helpTooltips["action"]["maxRetries"]}
-                    />
-                  </div>
-                  <Input
-                    type="number"
-                    placeholder={placeholders["action"]["maxRetries"]}
-                    className="nopan w-52 text-xs"
-                    min="0"
-                    value={inputs.maxRetries ?? ""}
-                    onChange={(event) => {
-                      if (!editable) {
-                        return;
-                      }
-                      const value =
-                        event.target.value === ""
-                          ? null
-                          : Number(event.target.value);
-                      handleChange("maxRetries", value);
+                <div className="space-y-2">
+                  <ParametersMultiSelect
+                    availableOutputParameters={outputParameterKeys}
+                    parameters={data.parameterKeys}
+                    onParametersChange={(parameterKeys) => {
+                      updateNodeData(id, { parameterKeys });
                     }}
                   />
                 </div>
@@ -305,25 +310,6 @@ function ActionNode({ id, data }: NodeProps<ActionNode>) {
                   />
                 </div>
                 <Separator />
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Label className="text-xs text-slate-300">
-                      2FA Verification URL
-                    </Label>
-                    <HelpTooltip
-                      content={helpTooltips["action"]["totpVerificationUrl"]}
-                    />
-                  </div>
-                  <WorkflowBlockInputTextarea
-                    nodeId={id}
-                    onChange={(value) => {
-                      handleChange("totpVerificationUrl", value);
-                    }}
-                    value={inputs.totpVerificationUrl ?? ""}
-                    placeholder={placeholders["action"]["totpVerificationUrl"]}
-                    className="nopan text-xs"
-                  />
-                </div>
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <Label className="text-xs text-slate-300">

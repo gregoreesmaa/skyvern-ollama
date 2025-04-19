@@ -124,3 +124,25 @@ class FailedToFormatJinjaStyleParameter(SkyvernException):
 class NoIterableValueFound(SkyvernException):
     def __init__(self) -> None:
         super().__init__("No iterable value found for the loop block")
+
+
+class InvalidTemplateWorkflowPermanentId(SkyvernHTTPException):
+    def __init__(self, workflow_permanent_id: str) -> None:
+        super().__init__(
+            message=f"Invalid template workflow permanent id: {workflow_permanent_id}. Please make sure the workflow is a valid template.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+class InsecureCodeDetected(SkyvernException):
+    def __init__(self, msg: str) -> None:
+        super().__init__(
+            f"Insecure code detected. Reason: {msg}",
+        )
+
+
+class CustomizedCodeException(SkyvernException):
+    def __init__(self, exception: Exception) -> None:
+        super().__init__(
+            f"Failed to execute code block. Reason: {exception.__class__.__name__}: {str(exception)}",
+        )

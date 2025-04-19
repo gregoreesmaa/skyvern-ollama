@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 
 from skyvern.forge.sdk.artifact.models import Artifact, ArtifactType, LogEntityType
 from skyvern.forge.sdk.models import Step
-from skyvern.forge.sdk.schemas.observers import ObserverCruise, ObserverThought
+from skyvern.forge.sdk.schemas.ai_suggestions import AISuggestion
+from skyvern.forge.sdk.schemas.files import FileInfo
+from skyvern.forge.sdk.schemas.task_v2 import TaskV2, Thought
 from skyvern.forge.sdk.schemas.workflow_runs import WorkflowRunBlock
 
 # TODO: This should be a part of the ArtifactType model
@@ -18,6 +20,7 @@ FILE_EXTENTSION_MAP: dict[ArtifactType, str] = {
     ArtifactType.LLM_REQUEST: "json",
     ArtifactType.LLM_RESPONSE: "json",
     ArtifactType.LLM_RESPONSE_PARSED: "json",
+    ArtifactType.LLM_RESPONSE_RENDERED: "json",
     ArtifactType.VISIBLE_ELEMENTS_ID_CSS_MAP: "json",
     ArtifactType.VISIBLE_ELEMENTS_ID_FRAME_MAP: "json",
     ArtifactType.VISIBLE_ELEMENTS_TREE: "json",
@@ -27,6 +30,7 @@ FILE_EXTENTSION_MAP: dict[ArtifactType, str] = {
     ArtifactType.HTML_ACTION: "html",
     ArtifactType.TRACE: "zip",
     ArtifactType.HAR: "har",
+    ArtifactType.HASHED_HREF_MAP: "json",
     # DEPRECATED: we're using CSS selector map now
     ArtifactType.VISIBLE_ELEMENTS_ID_XPATH_MAP: "json",
 }
@@ -38,24 +42,30 @@ class BaseStorage(ABC):
         pass
 
     @abstractmethod
+    async def retrieve_global_workflows(self) -> list[str]:
+        pass
+
+    @abstractmethod
     def build_log_uri(self, log_entity_type: LogEntityType, log_entity_id: str, artifact_type: ArtifactType) -> str:
         pass
 
     @abstractmethod
-    def build_observer_thought_uri(
-        self, artifact_id: str, observer_thought: ObserverThought, artifact_type: ArtifactType
-    ) -> str:
+    def build_thought_uri(self, artifact_id: str, thought: Thought, artifact_type: ArtifactType) -> str:
         pass
 
     @abstractmethod
-    def build_observer_cruise_uri(
-        self, artifact_id: str, observer_cruise: ObserverCruise, artifact_type: ArtifactType
-    ) -> str:
+    def build_task_v2_uri(self, artifact_id: str, task_v2: TaskV2, artifact_type: ArtifactType) -> str:
         pass
 
     @abstractmethod
     def build_workflow_run_block_uri(
         self, artifact_id: str, workflow_run_block: WorkflowRunBlock, artifact_type: ArtifactType
+    ) -> str:
+        pass
+
+    @abstractmethod
+    def build_ai_suggestion_uri(
+        self, artifact_id: str, ai_suggestion: AISuggestion, artifact_type: ArtifactType
     ) -> str:
         pass
 
@@ -104,5 +114,5 @@ class BaseStorage(ABC):
     @abstractmethod
     async def get_downloaded_files(
         self, organization_id: str, task_id: str | None, workflow_run_id: str | None
-    ) -> list[str]:
+    ) -> list[FileInfo]:
         pass

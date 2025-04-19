@@ -27,26 +27,33 @@ SEQUENCE_COUNTER = itertools.count()
 _worker_hash = None
 
 # prefix
-ORGANIZATION_AUTH_TOKEN_PREFIX = "oat"
-ORG_PREFIX = "o"
-TASK_PREFIX = "tsk"
-USER_PREFIX = "u"
-STEP_PREFIX = "stp"
+ACTION_PREFIX = "act"
+AI_SUGGESTION_PREFIX = "as"
 ARTIFACT_PREFIX = "a"
-WORKFLOW_PREFIX = "w"
-WORKFLOW_PERMANENT_ID_PREFIX = "wpid"
-WORKFLOW_RUN_PREFIX = "wr"
-WORKFLOW_RUN_BLOCK_PREFIX = "wrb"
-WORKFLOW_PARAMETER_PREFIX = "wp"
 AWS_SECRET_PARAMETER_PREFIX = "asp"
-OUTPUT_PARAMETER_PREFIX = "op"
+BITWARDEN_CREDIT_CARD_DATA_PARAMETER_PREFIX = "bccd"
 BITWARDEN_LOGIN_CREDENTIAL_PARAMETER_PREFIX = "blc"
 BITWARDEN_SENSITIVE_INFORMATION_PARAMETER_PREFIX = "bsi"
-BITWARDEN_CREDIT_CARD_DATA_PARAMETER_PREFIX = "bccd"
-TASK_GENERATION_PREFIX = "tg"
-OBSERVER_CRUISE_ID = "oc"
-OBSERVER_THOUGHT_ID = "ot"
+CREDENTIAL_PARAMETER_PREFIX = "cp"
+CREDENTIAL_PREFIX = "cred"
+ORGANIZATION_BITWARDEN_COLLECTION_PREFIX = "obc"
+TASK_V2_ID = "tsk_v2"
+THOUGHT_ID = "ot"
+ORGANIZATION_AUTH_TOKEN_PREFIX = "oat"
+ORG_PREFIX = "o"
+OUTPUT_PARAMETER_PREFIX = "op"
 PERSISTENT_BROWSER_SESSION_ID = "pbs"
+STEP_PREFIX = "stp"
+TASK_GENERATION_PREFIX = "tg"
+TASK_PREFIX = "tsk"
+TASK_RUN_PREFIX = "tr"
+TOTP_CODE_PREFIX = "totp"
+USER_PREFIX = "u"
+WORKFLOW_PARAMETER_PREFIX = "wp"
+WORKFLOW_PERMANENT_ID_PREFIX = "wpid"
+WORKFLOW_PREFIX = "w"
+WORKFLOW_RUN_BLOCK_PREFIX = "wrb"
+WORKFLOW_RUN_PREFIX = "wr"
 
 
 def generate_workflow_id() -> str:
@@ -134,29 +141,54 @@ def generate_task_generation_id() -> str:
     return f"{TASK_GENERATION_PREFIX}_{int_id}"
 
 
+def generate_ai_suggestion_id() -> str:
+    int_id = generate_id()
+    return f"{AI_SUGGESTION_PREFIX}_{int_id}"
+
+
 def generate_totp_code_id() -> str:
     int_id = generate_id()
-    return f"totp_{int_id}"
+    return f"{TOTP_CODE_PREFIX}_{int_id}"
 
 
 def generate_action_id() -> str:
     int_id = generate_id()
-    return f"a_{int_id}"
+    return f"{ACTION_PREFIX}_{int_id}"
 
 
-def generate_observer_cruise_id() -> str:
+def generate_task_v2_id() -> str:
     int_id = generate_id()
-    return f"{OBSERVER_CRUISE_ID}_{int_id}"
+    return f"{TASK_V2_ID}_{int_id}"
 
 
-def generate_observer_thought_id() -> str:
+def generate_thought_id() -> str:
     int_id = generate_id()
-    return f"{OBSERVER_THOUGHT_ID}_{int_id}"
+    return f"{THOUGHT_ID}_{int_id}"
 
 
 def generate_persistent_browser_session_id() -> str:
     int_id = generate_id()
     return f"{PERSISTENT_BROWSER_SESSION_ID}_{int_id}"
+
+
+def generate_task_run_id() -> str:
+    int_id = generate_id()
+    return f"{TASK_RUN_PREFIX}_{int_id}"
+
+
+def generate_credential_parameter_id() -> str:
+    int_id = generate_id()
+    return f"{CREDENTIAL_PARAMETER_PREFIX}_{int_id}"
+
+
+def generate_credential_id() -> str:
+    int_id = generate_id()
+    return f"{CREDENTIAL_PREFIX}_{int_id}"
+
+
+def generate_organization_bitwarden_collection_id() -> str:
+    int_id = generate_id()
+    return f"{ORGANIZATION_BITWARDEN_COLLECTION_PREFIX}_{int_id}"
 
 
 def generate_id() -> int:
@@ -191,7 +223,7 @@ def current_time_ms() -> int:
 
 
 def _mask_shift(value: int, mask_bits: int, shift_bits: int) -> int:
-    return (value & ((2**mask_bits) - 1)) << shift_bits
+    return (value & ((1 << mask_bits) - 1)) << shift_bits
 
 
 def _get_worker_hash() -> int:

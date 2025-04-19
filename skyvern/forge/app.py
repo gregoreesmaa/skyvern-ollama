@@ -1,6 +1,7 @@
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI
+from openai import AsyncAzureOpenAI, AsyncOpenAI
 
 from skyvern.forge.agent import ForgeAgent
 from skyvern.forge.agent_functions import AgentFunction
@@ -16,6 +17,7 @@ from skyvern.forge.sdk.settings_manager import SettingsManager
 from skyvern.forge.sdk.workflow.context_manager import WorkflowContextManager
 from skyvern.forge.sdk.workflow.service import WorkflowService
 from skyvern.webeye.browser_manager import BrowserManager
+from skyvern.webeye.persistent_sessions_manager import PersistentSessionsManager
 from skyvern.webeye.scraper.scraper import ScrapeExcludeFunc
 
 SETTINGS_MANAGER = SettingsManager.get_settings()
@@ -31,12 +33,32 @@ ARTIFACT_MANAGER = ArtifactManager()
 BROWSER_MANAGER = BrowserManager()
 EXPERIMENTATION_PROVIDER: BaseExperimentationProvider = NoOpExperimentationProvider()
 LLM_API_HANDLER = LLMAPIHandlerFactory.get_llm_api_handler(SettingsManager.get_settings().LLM_KEY)
+OPENAI_CLIENT = AsyncOpenAI(api_key=SettingsManager.get_settings().OPENAI_API_KEY or "")
+if SettingsManager.get_settings().ENABLE_AZURE_CUA:
+    OPENAI_CLIENT = AsyncAzureOpenAI(
+        api_key=SettingsManager.get_settings().AZURE_CUA_API_KEY,
+        api_version=SettingsManager.get_settings().AZURE_CUA_API_VERSION,
+        azure_endpoint=SettingsManager.get_settings().AZURE_CUA_ENDPOINT,
+        azure_deployment=SettingsManager.get_settings().AZURE_CUA_DEPLOYMENT,
+    )
+
 SECONDARY_LLM_API_HANDLER = LLMAPIHandlerFactory.get_llm_api_handler(
     SETTINGS_MANAGER.SECONDARY_LLM_KEY if SETTINGS_MANAGER.SECONDARY_LLM_KEY else SETTINGS_MANAGER.LLM_KEY
+)
+SELECT_AGENT_LLM_API_HANDLER = (
+    LLMAPIHandlerFactory.get_llm_api_handler(SETTINGS_MANAGER.SELECT_AGENT_LLM_KEY)
+    if SETTINGS_MANAGER.SELECT_AGENT_LLM_KEY
+    else SECONDARY_LLM_API_HANDLER
+)
+SINGLE_CLICK_AGENT_LLM_API_HANDLER = (
+    LLMAPIHandlerFactory.get_llm_api_handler(SETTINGS_MANAGER.SINGLE_CLICK_AGENT_LLM_KEY)
+    if SETTINGS_MANAGER.SINGLE_CLICK_AGENT_LLM_KEY
+    else SECONDARY_LLM_API_HANDLER
 )
 WORKFLOW_CONTEXT_MANAGER = WorkflowContextManager()
 WORKFLOW_SERVICE = WorkflowService()
 AGENT_FUNCTION = AgentFunction()
+PERSISTENT_SESSIONS_MANAGER = PersistentSessionsManager(database=DATABASE)
 scrape_exclude: ScrapeExcludeFunc | None = None
 authentication_function: Callable[[str], Awaitable[Organization]] | None = None
 setup_api_app: Callable[[FastAPI], None] | None = None

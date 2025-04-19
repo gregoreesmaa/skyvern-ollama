@@ -15,16 +15,26 @@ import { CodeEditor } from "@/routes/workflows/components/CodeEditor";
 import { useDeleteNodeCallback } from "@/routes/workflows/hooks/useDeleteNodeCallback";
 import { useNodeLabelChangeHandler } from "@/routes/workflows/hooks/useLabelChangeHandler";
 import { WorkflowBlockTypes } from "@/routes/workflows/types/workflowTypes";
-import { Handle, NodeProps, Position, useReactFlow } from "@xyflow/react";
+import {
+  Handle,
+  NodeProps,
+  Position,
+  useEdges,
+  useNodes,
+  useReactFlow,
+} from "@xyflow/react";
 import { useState } from "react";
 import { helpTooltips, placeholders } from "../../helpContent";
 import { EditableNodeTitle } from "../components/EditableNodeTitle";
 import { NodeActionMenu } from "../NodeActionMenu";
 import { errorMappingExampleValue } from "../types";
 import { WorkflowBlockIcon } from "../WorkflowBlockIcon";
-import { CredentialParameterSelector } from "./CredentialParameterSelector";
 import type { LoginNode } from "./types";
-
+import { ParametersMultiSelect } from "../TaskNode/ParametersMultiSelect";
+import { AppNode } from "..";
+import { getAvailableOutputParameterKeys } from "../../workflowEditorUtils";
+import { useIsFirstBlockInWorkflow } from "../../hooks/useIsFirstNodeInWorkflow";
+import { LoginBlockCredentialSelector } from "./LoginBlockCredentialSelector";
 function LoginNode({ id, data }: NodeProps<LoginNode>) {
   const { updateNodeData } = useReactFlow();
   const { editable } = data;
@@ -36,7 +46,6 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
     url: data.url,
     navigationGoal: data.navigationGoal,
     errorCodeMapping: data.errorCodeMapping,
-    maxRetries: data.maxRetries,
     maxStepsOverride: data.maxStepsOverride,
     continueOnFailure: data.continueOnFailure,
     cacheActions: data.cacheActions,
@@ -46,6 +55,11 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
     terminateCriterion: data.terminateCriterion,
   });
   const deleteNodeCallback = useDeleteNodeCallback();
+
+  const nodes = useNodes<AppNode>();
+  const edges = useEdges();
+  const outputParameterKeys = getAvailableOutputParameterKeys(nodes, edges, id);
+  const isFirstWorkflowBlock = useIsFirstBlockInWorkflow({ id });
 
   function handleChange(key: string, value: unknown) {
     if (!editable) {
@@ -97,10 +111,18 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
         </header>
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="flex gap-2">
-              <Label className="text-xs text-slate-300">URL</Label>
-              <HelpTooltip content={helpTooltips["login"]["url"]} />
+            <div className="flex justify-between">
+              <div className="flex gap-2">
+                <Label className="text-xs text-slate-300">URL</Label>
+                <HelpTooltip content={helpTooltips["login"]["url"]} />
+              </div>
+              {isFirstWorkflowBlock ? (
+                <div className="flex justify-end text-xs text-slate-400">
+                  Tip: Use the {"+"} button to add parameters!
+                </div>
+              ) : null}
             </div>
+
             <WorkflowBlockInputTextarea
               nodeId={id}
               onChange={(value) => {
@@ -127,8 +149,9 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-xs text-slate-300">Credential Key</Label>
-            <CredentialParameterSelector
+            <Label className="text-xs text-slate-300">Credential</Label>
+            <LoginBlockCredentialSelector
+              nodeId={id}
               value={
                 data.parameterKeys.length > 0
                   ? data.parameterKeys[0]
@@ -142,16 +165,6 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
               }}
             />
           </div>
-          <div className="rounded-md bg-slate-800 p-2">
-            <div className="space-y-1 text-xs text-slate-400">
-              <div>Credentials need to be added with the help of our team.</div>
-              <div>
-                Reach out to{" "}
-                <span className="text-slate-200">support@skyvern.com</span> for
-                assistance.
-              </div>
-            </div>
-          </div>
         </div>
         <Separator />
         <Accordion type="single" collapsible>
@@ -161,6 +174,15 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
             </AccordionTrigger>
             <AccordionContent className="pl-6 pr-1 pt-1">
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <ParametersMultiSelect
+                    availableOutputParameters={outputParameterKeys}
+                    parameters={data.parameterKeys}
+                    onParametersChange={(parameterKeys) => {
+                      updateNodeData(id, { parameterKeys });
+                    }}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label className="text-xs text-slate-300">
                     Complete if...
@@ -175,30 +197,6 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
                   />
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <Label className="text-xs font-normal text-slate-300">
-                      Max Retries
-                    </Label>
-                    <HelpTooltip
-                      content={helpTooltips["login"]["maxRetries"]}
-                    />
-                  </div>
-                  <Input
-                    type="number"
-                    placeholder={placeholders["login"]["maxRetries"]}
-                    className="nopan w-52 text-xs"
-                    min="0"
-                    value={inputs.maxRetries ?? ""}
-                    onChange={(event) => {
-                      const value =
-                        event.target.value === ""
-                          ? null
-                          : Number(event.target.value);
-                      handleChange("maxRetries", value);
-                    }}
-                  />
-                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-2">
                     <Label className="text-xs font-normal text-slate-300">
@@ -301,25 +299,6 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <Label className="text-xs text-slate-300">
-                      2FA Verification URL
-                    </Label>
-                    <HelpTooltip
-                      content={helpTooltips["login"]["totpVerificationUrl"]}
-                    />
-                  </div>
-                  <WorkflowBlockInputTextarea
-                    nodeId={id}
-                    onChange={(value) => {
-                      handleChange("totpVerificationUrl", value);
-                    }}
-                    value={inputs.totpVerificationUrl ?? ""}
-                    placeholder={placeholders["login"]["totpVerificationUrl"]}
-                    className="nopan text-xs"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Label className="text-xs text-slate-300">
                       2FA Identifier
                     </Label>
                     <HelpTooltip
@@ -333,6 +312,25 @@ function LoginNode({ id, data }: NodeProps<LoginNode>) {
                     }}
                     value={inputs.totpIdentifier ?? ""}
                     placeholder={placeholders["login"]["totpIdentifier"]}
+                    className="nopan text-xs"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Label className="text-xs text-slate-300">
+                      2FA Verification URL
+                    </Label>
+                    <HelpTooltip
+                      content={helpTooltips["login"]["totpVerificationUrl"]}
+                    />
+                  </div>
+                  <WorkflowBlockInputTextarea
+                    nodeId={id}
+                    onChange={(value) => {
+                      handleChange("totpVerificationUrl", value);
+                    }}
+                    value={inputs.totpVerificationUrl ?? ""}
+                    placeholder={placeholders["login"]["totpVerificationUrl"]}
                     className="nopan text-xs"
                   />
                 </div>

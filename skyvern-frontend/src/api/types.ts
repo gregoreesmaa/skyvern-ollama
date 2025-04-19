@@ -35,6 +35,13 @@ export const ProxyLocation = {
   ResidentialES: "RESIDENTIAL_ES",
   ResidentialIN: "RESIDENTIAL_IN",
   ResidentialJP: "RESIDENTIAL_JP",
+  ResidentialGB: "RESIDENTIAL_GB",
+  ResidentialFR: "RESIDENTIAL_FR",
+  ResidentialDE: "RESIDENTIAL_DE",
+  ResidentialNZ: "RESIDENTIAL_NZ",
+  ResidentialZA: "RESIDENTIAL_ZA",
+  ResidentialAR: "RESIDENTIAL_AR",
+  ResidentialISP: "RESIDENTIAL_ISP",
   None: "NONE",
 } as const;
 
@@ -77,6 +84,31 @@ export type StepApiResponse = {
   retry_index: number;
   status: Status;
   step_cost: number;
+};
+
+export type Task = {
+  task_id: string;
+  status: Status;
+  created_at: string; // ISO 8601
+  modified_at: string; // ISO 8601
+  extracted_information: Record<string, unknown> | string | null;
+  screenshot_url: string | null;
+  recording_url: string | null;
+  organization_id: string;
+  workflow_run_id: string | null;
+  order: number | null;
+  retry: number | null;
+  max_steps_per_run: number | null;
+  errors: Array<Record<string, unknown>>;
+  title: string | null;
+  url: string;
+  webhook_callback_url: string | null;
+  navigation_goal: string | null;
+  data_extraction_goal: string | null;
+  navigation_payload: Record<string, unknown> | string | null;
+  complete_criterion: string | null;
+  terminate_criterion: string | null;
+  application: string | null;
 };
 
 export type TaskApiResponse = {
@@ -143,6 +175,13 @@ export const ActionTypes = {
   wait: "wait",
   terminate: "terminate",
   SolveCaptcha: "solve_captcha",
+  extract: "extract",
+  ReloadPage: "reload_page",
+  KeyPress: "keypress",
+  Scroll: "scroll",
+  Move: "move",
+  NullAction: "null_action",
+  VerificationCode: "verification_code",
 } as const;
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes];
@@ -158,6 +197,13 @@ export const ReadableActionTypes: {
   wait: "Wait",
   terminate: "Terminate",
   solve_captcha: "Solve Captcha",
+  extract: "Extract Data",
+  reload_page: "Reload Page",
+  keypress: "Press Keys",
+  scroll: "Scroll",
+  move: "Move",
+  null_action: "Screenshot",
+  verification_code: "Verification Code",
 };
 
 export type Option = {
@@ -195,6 +241,7 @@ export type WorkflowRunApiResponse = {
   created_at: string;
   modified_at: string;
   failure_reason: string | null;
+  workflow_title: string | null;
 };
 
 export type WorkflowRunStatusApiResponse = {
@@ -211,6 +258,10 @@ export type WorkflowRunStatusApiResponse = {
   outputs: Record<string, unknown> | null;
   failure_reason: string | null;
   downloaded_file_urls: Array<string> | null;
+  total_steps: number | null;
+  total_cost: number | null;
+  task_v2: TaskV2 | null;
+  workflow_title: string | null;
 };
 
 export type TaskGenerationApiResponse = {
@@ -237,8 +288,8 @@ export type ActionsApiResponse = {
   response: string | null;
 };
 
-export type ObserverCruise = {
-  observer_cruise_id: string;
+export type TaskV2 = {
+  task_id: string;
   status: Status;
   workflow_run_id: string | null;
   workflow_id: string | null;
@@ -247,4 +298,65 @@ export type ObserverCruise = {
   url: string | null;
   created_at: string;
   modified_at: string;
+  output: Record<string, unknown> | null;
+  summary: string | null;
+  webhook_callback_url: string | null;
+  totp_verification_url: string | null;
+  totp_identifier: string | null;
+  proxy_location: ProxyLocation | null;
+};
+
+export type Createv2TaskRequest = {
+  user_prompt: string;
+  webhook_callback_url?: string | null;
+  proxy_location?: ProxyLocation | null;
+};
+
+export type PasswordCredentialApiResponse = {
+  username: string;
+};
+
+export type CreditCardCredentialApiResponse = {
+  last_four: string;
+  brand: string;
+};
+
+export type CredentialApiResponse = {
+  credential_id: string;
+  credential: PasswordCredentialApiResponse | CreditCardCredentialApiResponse;
+  credential_type: "password" | "credit_card";
+  name: string;
+};
+
+export function isPasswordCredential(
+  credential: PasswordCredentialApiResponse | CreditCardCredentialApiResponse,
+): credential is PasswordCredentialApiResponse {
+  return "username" in credential;
+}
+
+export function isCreditCardCredential(
+  credential: PasswordCredentialApiResponse | CreditCardCredentialApiResponse,
+): credential is CreditCardCredentialApiResponse {
+  return "last_four" in credential;
+}
+
+export type CreateCredentialRequest = {
+  name: string;
+  credential_type: "password" | "credit_card";
+  credential: PasswordCredential | CreditCardCredential;
+};
+
+export type PasswordCredential = {
+  username: string;
+  password: string;
+  totp: string | null;
+};
+
+export type CreditCardCredential = {
+  card_number: string;
+  card_cvv: string;
+  card_exp_month: string;
+  card_exp_year: string;
+  card_brand: string;
+  card_holder_name: string;
 };

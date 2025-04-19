@@ -5,7 +5,7 @@ repos:
     rev: v5.0.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=5000']
+        args: ['--maxkb=15000']
         exclude: 'inputs.*|skyvern_demo_video\.mp4|demo_visualizer.mp4'
       - id: check-byte-order-marker
       - id: check-case-conflict
@@ -15,11 +15,15 @@ repos:
       - id: detect-private-key
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.7.3
+    rev: v0.9.1
     hooks:
       # Run the linter.
       - id: ruff
         args: [--fix]
+        exclude: |
+          (?x)(
+            ^skyvern/client/.*
+          )
       # Run the formatter.
       - id: ruff-format
   - repo: https://github.com/pycqa/isort
@@ -27,6 +31,11 @@ repos:
     hooks:
       - id: isort
         language_version: python3.11
+        exclude: |
+          (?x)(
+            ^skyvern/client/.*|
+            ^skyvern/__init__.py
+          )
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
@@ -37,7 +46,7 @@ repos:
       - id: python-use-type-annotations
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+    rev: v1.14.1
     hooks:
       - id: mypy
         args: [--show-error-codes, --warn-unused-configs, --disallow-untyped-calls, --disallow-untyped-defs, --disallow-incomplete-defs, --check-untyped-defs, --python-version=3.11]
@@ -53,7 +62,8 @@ repos:
           (?x)(
             ^tests.*|
             ^streamlit_app.*|
-            ^alembic.*
+            ^alembic.*|
+            ^skyvern/client/.*
           )
 
   - repo: https://github.com/PyCQA/autoflake
@@ -64,6 +74,10 @@ repos:
         entry: autoflake --in-place --remove-all-unused-imports --recursive --ignore-init-module-imports
         language: python
         types: [ python ]
+        exclude: |
+          (?x)(
+            ^skyvern/client/.*
+          )
       # Mono repo has bronken this TODO: fix
       # - id: pytest-check
       #   name: pytest-check

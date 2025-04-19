@@ -52,7 +52,14 @@ setup_llm_providers() {
         else
             update_or_add_env_var "OPENAI_API_KEY" "$openai_api_key"
             update_or_add_env_var "ENABLE_OPENAI" "true"
-            model_options+=("OPENAI_GPT4_TURBO" "OPENAI_GPT4V" "OPENAI_GPT4O")
+            model_options+=(
+                "OPENAI_GPT4_1"
+                "OPENAI_GPT4_1_MINI"
+                "OPENAI_GPT4_1_NANO"
+                "OPENAI_GPT4O"
+                "OPENAI_O4_MINI"
+                "OPENAI_O3"
+            )
         fi
     else
         update_or_add_env_var "ENABLE_OPENAI" "false"
@@ -69,7 +76,10 @@ setup_llm_providers() {
         else
             update_or_add_env_var "ANTHROPIC_API_KEY" "$anthropic_api_key"
             update_or_add_env_var "ENABLE_ANTHROPIC" "true"
-            model_options+=("ANTHROPIC_CLAUDE3_OPUS" "ANTHROPIC_CLAUDE3_SONNET" "ANTHROPIC_CLAUDE3_HAIKU" "ANTHROPIC_CLAUDE3.5_SONNET")
+            model_options+=(
+                "ANTHROPIC_CLAUDE3.5_SONNET"
+                "ANTHROPIC_CLAUDE3.7_SONNET"
+            )
         fi
     else
         update_or_add_env_var "ENABLE_ANTHROPIC" "false"
@@ -92,7 +102,9 @@ setup_llm_providers() {
             update_or_add_env_var "AZURE_API_BASE" "$azure_api_base"
             update_or_add_env_var "AZURE_API_VERSION" "$azure_api_version"
             update_or_add_env_var "ENABLE_AZURE" "true"
-            model_options+=("AZURE_OPENAI_GPT4V")
+            model_options+=(
+                "AZURE_OPENAI_GPT4O"
+            )
         fi
     else
         update_or_add_env_var "ENABLE_AZURE" "false"
@@ -109,10 +121,44 @@ setup_llm_providers() {
         else
             update_or_add_env_var "GEMINI_API_KEY" "$gemini_api_key"
             update_or_add_env_var "ENABLE_GEMINI" "true"
-            model_options+=("GEMINI_PRO")
+            model_options+=(
+                "GEMINI_FLASH_2_0"
+                "GEMINI_FLASH_2_0_LITE"
+                "GEMINI_2.5_PRO_PREVIEW_03_25"
+                "GEMINI_2.5_PRO_EXP_03_25"
+            )
         fi
     else
         update_or_add_env_var "ENABLE_GEMINI" "false"
+    fi
+
+    # Novita AI Configuration
+    echo "To enable Novita AI, you must have an Novita AI API key."
+    read -p "Do you want to enable Novita AI (y/n)? " enable_novita
+    if [[ "$enable_novita" == "y" ]]; then
+        read -p "Enter your Novita AI API key: " novita_api_key
+        if [ -z "$novita_api_key" ]; then
+            echo "Error: Novita AI API key is required."
+            echo "Novita AI will not be enabled."
+        else
+            update_or_add_env_var "NOVITA_API_KEY" "$novita_api_key"
+            update_or_add_env_var "ENABLE_NOVITA" "true"
+            model_options+=(
+                "NOVITA_DEEPSEEK_R1"
+                "NOVITA_DEEPSEEK_V3"
+                "NOVITA_LLAMA_3_3_70B"
+                "NOVITA_LLAMA_3_2_1B"
+                "NOVITA_LLAMA_3_2_3B"
+                "NOVITA_LLAMA_3_2_11B_VISION"
+                "NOVITA_LLAMA_3_1_8B"
+                "NOVITA_LLAMA_3_1_70B"
+                "NOVITA_LLAMA_3_1_405B"
+                "NOVITA_LLAMA_3_8B"
+                "NOVITA_LLAMA_3_70B"
+            )
+        fi
+    else
+        update_or_add_env_var "ENABLE_NOVITA" "false"
     fi
 
     #Ollama Configuartion

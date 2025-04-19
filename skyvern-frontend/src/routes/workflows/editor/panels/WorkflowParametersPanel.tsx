@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWorkflowParametersState } from "../useWorkflowParametersState";
 import { WorkflowParameterAddPanel } from "./WorkflowParameterAddPanel";
-import { ParametersState } from "../FlowRenderer";
+import { ParametersState } from "../types";
 import { WorkflowParameterEditPanel } from "./WorkflowParameterEditPanel";
 import { MixerVerticalIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,11 @@ import {
 import { useReactFlow } from "@xyflow/react";
 import { useWorkflowHasChangesStore } from "@/store/WorkflowHasChangesStore";
 import { ScrollArea, ScrollAreaViewport } from "@/components/ui/scroll-area";
+import {
+  WorkflowEditorParameterType,
+  WorkflowEditorParameterTypes,
+} from "../../types/workflowTypes";
+import { getLabelForWorkflowParameterType } from "../workflowEditorUtils";
 
 const WORKFLOW_EDIT_PANEL_WIDTH = 20 * 16;
 const WORKFLOW_EDIT_PANEL_GAP = 1 * 16;
@@ -41,7 +46,7 @@ function WorkflowParametersPanel() {
     active: boolean;
     operation: "add" | "edit";
     parameter?: ParametersState[number] | null;
-    type: "workflow" | "credential" | "context" | "secret";
+    type: WorkflowEditorParameterType;
   }>({
     active: false,
     operation: "add",
@@ -75,7 +80,7 @@ function WorkflowParametersPanel() {
                 setOperationPanelState({
                   active: true,
                   operation: "add",
-                  type: "workflow",
+                  type: WorkflowEditorParameterTypes.Workflow,
                 });
               }}
             >
@@ -86,7 +91,7 @@ function WorkflowParametersPanel() {
                 setOperationPanelState({
                   active: true,
                   operation: "add",
-                  type: "credential",
+                  type: WorkflowEditorParameterTypes.Credential,
                 });
               }}
             >
@@ -97,22 +102,22 @@ function WorkflowParametersPanel() {
                 setOperationPanelState({
                   active: true,
                   operation: "add",
-                  type: "context",
+                  type: WorkflowEditorParameterTypes.Secret,
                 });
               }}
             >
-              Context Parameter
+              Secret Parameter
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
                 setOperationPanelState({
                   active: true,
                   operation: "add",
-                  type: "secret",
+                  type: WorkflowEditorParameterTypes.CreditCardData,
                 });
               }}
             >
-              Secret Parameter
+              Credit Card Data Parameter
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -124,13 +129,15 @@ function WorkflowParametersPanel() {
                 return (
                   <div
                     key={parameter.key}
-                    className="flex items-center justify-between rounded-md bg-slate-elevation1 px-3 py-2"
+                    className="flex items-center justify-between gap-2 rounded-md bg-slate-elevation1 px-3 py-2"
                   >
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm">{parameter.key}</span>
+                    <div className="flex min-w-0 items-center gap-4">
+                      <span className="truncate text-sm" title={parameter.key}>
+                        {parameter.key}
+                      </span>
                       {parameter.parameterType === "workflow" ? (
                         <span className="text-sm text-slate-400">
-                          {parameter.dataType}
+                          {getLabelForWorkflowParameterType(parameter.dataType)}
                         </span>
                       ) : (
                         <span className="text-sm text-slate-400">

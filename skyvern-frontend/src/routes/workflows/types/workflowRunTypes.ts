@@ -11,7 +11,7 @@ export type WorkflowRunTimelineItemType =
   (typeof WorkflowRunTimelineItemTypes)[keyof typeof WorkflowRunTimelineItemTypes];
 
 export type ObserverThought = {
-  observer_thought_id: string;
+  thought_id: string;
   user_input: string | null;
   observation: string | null;
   thought: string | null;
@@ -26,6 +26,7 @@ export type WorkflowRunBlock = {
   parent_workflow_run_block_id: string | null;
   block_type: WorkflowBlockType;
   label: string | null;
+  description: string | null;
   title: string | null;
   status: Status | null;
   failure_reason: string | null;
@@ -48,6 +49,13 @@ export type WorkflowRunBlock = {
   wait_sec?: number | null;
   created_at: string;
   modified_at: string;
+
+  // for loop block itself
+  loop_values: Array<unknown> | null;
+
+  // for blocks in loop
+  current_value: string | null;
+  current_index: number | null;
 };
 
 export type WorkflowRunTimelineBlockItem = {
@@ -115,7 +123,7 @@ export function isObserverThought(item: unknown): item is ObserverThought {
   return (
     typeof item === "object" &&
     item !== null &&
-    "observer_thought_id" in item &&
+    "thought_id" in item &&
     "thought" in item
   );
 }

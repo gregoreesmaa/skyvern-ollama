@@ -6,15 +6,17 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from skyvern.forge.sdk.schemas.observers import ObserverThought
+from skyvern.forge.sdk.schemas.task_v2 import Thought
 from skyvern.forge.sdk.workflow.models.block import BlockType
 from skyvern.webeye.actions.actions import Action
 
 
 class WorkflowRunBlock(BaseModel):
     workflow_run_block_id: str
+    block_workflow_run_id: str | None = None
     workflow_run_id: str
     organization_id: str | None = None
+    description: str | None = None
     parent_workflow_run_block_id: str | None = None
     block_type: BlockType
     label: str | None = None
@@ -41,6 +43,12 @@ class WorkflowRunBlock(BaseModel):
     current_value: str | None = None
     current_index: int | None = None
 
+    # email block
+    recipients: list[str] | None = None
+    attachments: list[str] | None = None
+    subject: str | None = None
+    body: str | None = None
+
 
 class WorkflowRunTimelineType(StrEnum):
     thought = "thought"
@@ -50,7 +58,7 @@ class WorkflowRunTimelineType(StrEnum):
 class WorkflowRunTimeline(BaseModel):
     type: WorkflowRunTimelineType
     block: WorkflowRunBlock | None = None
-    thought: ObserverThought | None = None
+    thought: Thought | None = None
     children: list[WorkflowRunTimeline] = []
     created_at: datetime
     modified_at: datetime
