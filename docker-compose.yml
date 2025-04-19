@@ -50,10 +50,10 @@ services:
       # - AZURE_API_VERSION=<your_azure_api_version>
       - ENABLE_OLLAMA=true
       - OLLAMA_API_BASE=http://host.docker.internal:11434
-      - LLM_KEY=OLLAMA_PRIMARY_MODEL
-      - OLLAMA_PRIMARY_MODEL=llama3.2-vision:90b
-      # - OLLAMA_PRIMARY_NUM_CTX=32768
-      # - OLLAMA_PRIMARY_TEMPERATURE=0.2
+      - LLM_KEY=OLLAMA_SECONDARY_MODEL
+      - OLLAMA_SECONDARY_MODEL=qwen2.5-coder:14b-instruct-q3_K_M
+      - OLLAMA_SECONDARY_NUM_CTX=32768
+      - OLLAMA_SECONDARY_TEMPERATURE=0.2
       # - SECONDARY_LLM_KEY=OLLAMA_SECONDARY_MODEL
       # - OLLAMA_SECONDARY_MODEL=qwen2.5-coder:14b
       # - OLLAMA_SECONDARY_NUM_CTX=32768
@@ -70,9 +70,9 @@ services:
   skyvern-ui:
     image: public.ecr.aws/skyvern/skyvern-ui:latest
     restart: on-failure
-    build:
-      context: .
-      dockerfile: ./Dockerfile.ui
+    # build:
+    #   context: .
+    #   dockerfile: ./Dockerfile.ui
     ports:
       - 8080:8080
       - 9090:9090
@@ -87,6 +87,3 @@ services:
       - VITE_WSS_BASE_URL=ws://localhost:8000/api/v1
     #   - VITE_API_BASE_URL=http://localhost:8000/api/v1
     #   - VITE_SKYVERN_API_KEY=
-    depends_on:
-      skyvern:
-        condition: service_healthy

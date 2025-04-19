@@ -177,7 +177,7 @@ async def _convert_svg_to_string(
                 if retry == SVG_SHAPE_CONVERTION_ATTEMPTS - 1:
                     # set the invalid css shape to cache to avoid retry in the near future
                     await app.CACHE.set(svg_key, INVALID_SHAPE, ex=timedelta(hours=1))
-                await asyncio.sleep(3)
+                # await asyncio.sleep(3)
             except Exception:
                 LOG.info(
                     "Failed to convert SVG to string shape by secondary llm. Will retry if haven't met the max try attempt after 3s.",
@@ -190,7 +190,7 @@ async def _convert_svg_to_string(
                 if retry == SVG_SHAPE_CONVERTION_ATTEMPTS - 1:
                     # set the invalid css shape to cache to avoid retry in the near future
                     await app.CACHE.set(svg_key, INVALID_SHAPE, ex=timedelta(weeks=1))
-                await asyncio.sleep(3)
+                # await asyncio.sleep(3)
         else:
             LOG.warning(
                 "Reaching the max try to convert svg element, going to drop the svg element.",
@@ -296,7 +296,7 @@ async def _convert_css_shape_to_string(
                     if retry == CSS_SHAPE_CONVERTION_ATTEMPTS - 1:
                         # set the invalid css shape to cache to avoid retry in the near future
                         await app.CACHE.set(shape_key, INVALID_SHAPE, ex=timedelta(hours=1))
-                    await asyncio.sleep(3)
+                    # await asyncio.sleep(3)
                 except Exception:
                     LOG.info(
                         "Failed to convert css shape to string shape by secondary llm. Will retry if haven't met the max try attempt after 3s.",
@@ -310,7 +310,7 @@ async def _convert_css_shape_to_string(
                     if retry == CSS_SHAPE_CONVERTION_ATTEMPTS - 1:
                         # set the invalid css shape to cache to avoid retry in the near future
                         await app.CACHE.set(shape_key, INVALID_SHAPE, ex=timedelta(weeks=1))
-                    await asyncio.sleep(3)
+                    # await asyncio.sleep(3)
             else:
                 LOG.info(
                     "Max css shape convertion retry, going to abort the convertion.",
