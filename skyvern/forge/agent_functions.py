@@ -38,6 +38,9 @@ def _remove_rect(element: dict) -> None:
 
 
 def _should_css_shape_convert(element: Dict) -> bool:
+    if not settings.ENABLE_SHAPE_CONVERSION:
+        return False
+    
     if "id" not in element:
         return False
 
@@ -124,7 +127,7 @@ async def _convert_svg_to_string(
     if element.get("isDropped", False):
         return
 
-    if not settings.ENABLE_SVG_CONVERSION:
+    if not settings.ENABLE_SHAPE_CONVERSION:
         _mark_element_as_dropped(element)
         return
 

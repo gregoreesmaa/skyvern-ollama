@@ -77,7 +77,7 @@ services:
       # - AWS_REGION=us-west-2                         # Replace this with a different AWS region, if you desire
       # - AWS_ACCESS_KEY_ID=FILL_ME_IN_PLEASE
       # - AWS_SECRET_ACCESS_KEY=FILL_ME_IN_PLEASE
-      - ENABLE_SVG_CONVERSION=false
+      - ENABLE_SHAPE_CONVERSION=false
       - ENABLE_OLLAMA=true
       - LLM_KEY=OLLAMA_PRIMARY_MODEL
       - OLLAMA_PRIMARY_API_BASE=http://host.docker.internal:11434
