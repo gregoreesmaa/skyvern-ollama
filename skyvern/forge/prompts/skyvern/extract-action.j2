@@ -1,102 +1,85 @@
-**Objective:** Execute the following instructions with absolute precision. **Your primary task is to first accurately interpret the visual state presented in the `screenshot`**, and *only then* determine the most efficient, logically sound sequence of next actions required to achieve the user's goal, adhering strictly to the constraints below. Prioritize finding a path forward if possible, considering recovery actions or alternatives on the current page before terminating.
+Identify actions to help user progress towards the user goal using the DOM elements given in the list and the screenshot of the website.
+Include only the elements that are relevant to the user goal, without altering or imagining new elements.
+Accurately interpret and understand the functional significance of SVG elements based on their shapes and context within the webpage.
+Use the user details to fill in necessary values. Always satisfy required fields if the field isn't already filled in. Don't return any action for the same field, if this field is already filled in and the value is the same as the one you would have filled in.
+MAKE SURE YOU ONLY OUTPUT VALID JSON. No text before or after JSON, no trailing commas, no comments (//), no unnecessary quotes, etc.
+Each interactable element is tagged with an ID. Avoid taking action on a disabled element when there is an alternative action available.
+If you see any information in red in the page screenshot, this means a condition wasn't satisfied. prioritize actions with the red information.
+If you see a popup in the page screenshot, prioritize actions on the popup.
 
-**Inputs:**
-
-1.  **`navigation_goal`:**
-    ```
-    {{ navigation_goal }}
-    ```
-2.  **`navigation_payload_str` (User Details):**
-    ```
-    {{ navigation_payload_str }}
-    ```
-3.  **`current_url`:** `{{ current_url }}`
-4.  **`local_datetime`:** `{{ local_datetime }}`
-5.  **`elements` (Interactable DOM Elements):**
-    ```
-    {{ elements }}
-    ```
-6.  **`screenshot`:** Provided image of the current webpage. (**Absolute source of truth for current page state**).
-7.  **`action_history`:**
-    ```
-    {{ action_history }}
-    ```
-8.  **`complete_criterion` (Optional):**
-    ```
-    {{ complete_criterion if complete_criterion else 'N/A' }}
-    ```
-9.  **`error_code_mapping_str` (Optional):**
-    ```
-    {{ error_code_mapping_str if error_code_mapping_str else 'N/A' }}
-    ```
-10. **`data_extraction_goal` (Optional):**
-    ```
-    {{ data_extraction_goal if data_extraction_goal else 'N/A' }}
-    ```
-11. **`verification_code_check`:** {% if verification_code_check %}True{% else %}False{% endif %}
-
-**Core Task & Constraints (Follow Strictly & Literally):**
-
-1.  **Comprehensive Context Use:** You **must** consider *all* provided input sections in your analysis, **prioritizing the `screenshot` for state assessment.**
-2.  **Visual Grounding & Structure:** **CRITICAL & MANDATORY FIRST STEP:**
-    a.  **Analyze Screenshot First:** Before any other analysis or action planning, meticulously examine the `screenshot`. Determine the actual page type and content (e.g., "Login Form", "Error Page: 404 Not Found", "Product Listing").
-    b.  **Visually Identify Elements:** Identify potentially relevant interactive elements *solely based on their visual appearance* in the `screenshot`. Note their likely type (input field, button, link) and purpose from visual cues. Consider elements needed for the goal AND elements needed for recovery (e.g., cookie banner 'accept' buttons, pop-up 'close' buttons).
-    c.  **Assess Goal Alignment:** Compare the visually confirmed state and elements with the expectations from `navigation_goal`. Note discrepancies.
-    d.  **Correlate AFTER Visual Confirmation:** *Only after* visually confirming an element's presence, relevance, and appropriate type, correlate it with the `elements` list to find its `id`.
-    e.  **DO NOT HALLUCINATE:** **Never** select actions or element IDs for elements not clearly visible and appropriate in the `screenshot`.
-3.  **Strict Input Reliance (No External Knowledge/Generalization):** Base analysis and actions *exclusively* on the provided inputs (with `screenshot` as the primary state source). **DO NOT** use external knowledge, web assumptions, or generalize. Interpret the specific visual state literally.
-4.  **Objective Interpretation & Pathfinding:** Analyze the page state objectively based *only* on visual/DOM evidence (Constraint #2).
-    a.  **Initial Feasibility:** Does the visually confirmed page state fundamentally prevent the goal (e.g., is it clearly the wrong type of page, like a 404 error when a form is expected)?
-    b.  **Recovery Check (If Needed):** If the *direct next step* of the `navigation_goal` isn't immediately possible visually, **but the page type seems generally correct (not fundamentally wrong like a 404 error)**, check `action_history` (Constraint #10) and visually scan for recovery actions:
-        * Can a recent failed action be retried differently (e.g., clicking a slightly different element)?
-        * Is there a visible overlay, cookie banner, or pop-up that needs closing first? Identify the relevant button/link visually.
-        * Are there other visible elements that might logically lead towards the goal state?
-    c.  **Termination Condition:** You should **ONLY** select "TERMINATE" if:
-        * The visually confirmed page type is fundamentally wrong for the goal (e.g., 404 error, completely unrelated site identified in Constraint #2a), **OR**
-        * The page seems generally correct, but the goal's next step is visually blocked, **AND** no potential recovery actions (like closing overlays or alternative clicks on relevant elements) can be identified visually after considering the action history.
-    d.  Prioritize proceeding towards the goal, attempting recovery actions if necessary and visually plausible, before resorting to termination.
-5.  **Logical Consistency & Efficiency:** Ensure the `action_plan` is coherent, efficient (direct path preferred, recovery actions if needed), and step-by-step. The `reasoning` must justify the chosen path (direct or recovery) based on the visual analysis.
-6.  **Goal-Oriented (Visually Constrained & Recoverable) Actions:** Use *only* **visually verified `elements`**. Prioritize actions directly progressing the `navigation_goal`. If blocked, attempt visually identifiable recovery actions (closing overlays, etc.) before terminating.
-7.  **SVG Interpretation:** Determine SVG function based *strictly* on visual shape and context in the `screenshot`.
-8.  **User Detail Integration:** Use `navigation_payload_str` *only* when necessary for an input field that has been **visually confirmed** as appropriate in the `screenshot`.
-9.  **Prioritization:** Prioritize actions on visually confirmed error messages or elements within visually confirmed pop-ups/overlays that might be blocking progress (e.g., cookie banners).
-10. **Action History Review & Recovery:** Evaluate `action_history`. If prior actions failed, analyze *why* based on the current visual state. Use this analysis to inform the recovery check in Constraint #4b. Formulate a *different, visually grounded* plan if a recovery path seems possible.
-11. **Strict JSON Output:** Generate **ONLY** a valid JSON object adhering *exactly* to the format below. **NO** text, explanations, or comments outside the JSON structure.
-
-**Output JSON Format:**
-
-```json
+Reply in JSON format with the following keys:
 {
-    "user_goal_stage": "string", // Description of progress based *strictly* on the **visually confirmed** state. Indicate if recovery actions are being attempted. Example: "Visual analysis confirms registration page loaded, but target fields obscured by cookie banner." OR "Visual analysis confirms 404 error page; goal impossible."
-    "user_goal_achieved": "boolean", // True ONLY if user goal is met based *strictly* on current visual state. False otherwise.
-    "action_plan": "string", // Summary of planned actions. May include recovery steps. Example: "Close cookie banner, input email, input password, click submit." Use "TERMINATE" only per Constraint #4c.
-    "actions": [ // Array of actions. Empty ONLY if `action_plan` is "COMPLETE" or "TERMINATE".
-        {
-            "reasoning": "string", // **Must start with visual confirmation.** Explain choice: Is it direct goal progression or a recovery action? How was element visually identified? Why ID? How fits plan? Example: "Visually identified cookie banner 'Accept' button. Clicking to reveal underlying form elements." OR "Visually confirmed email input field. Inputting text." OR "Visual assessment confirms 404 page, no recovery possible. Terminating."
-            "user_detail_query": "string", // Question for required detail OR description of action intent. Example: "What is the user's username?" or "Clicking the visually confirmed 'Accept Cookies' button."
-            "user_detail_answer": "string", // Answer derived *only* from user goal or user details payload.
-            "confidence_float": "float", // Confidence (0.0-1.0) based on **visual clarity**. Lower if attempting recovery based on ambiguous visual cues.
-            "action_type": "string", // Enum: "CLICK", "INPUT_TEXT", "UPLOAD_FILE", "SELECT_OPTION", "WAIT", "SOLVE_CAPTCHA", "COMPLETE", "TERMINATE". **Use "TERMINATE" only as per Constraint #4c.**
-            "id": "string", // ID of target element from `elements` (**MUST be visually confirmed first**). Null for WAIT, COMPLETE, TERMINATE.
-            "text": "string", // Text for "INPUT_TEXT". Null otherwise.
-            "file_url": "string", // URL for "UPLOAD_FILE". Null otherwise.
-            "download": "boolean", // True for "CLICK" if it visually appears to trigger download. False otherwise. Null for other types.
-            "option": { // Required for "SELECT_OPTION". Null otherwise.
-                "label": "string", // Exact visible label.
-                "index": "integer", // Option index.
-                "value": "string" // Option value attribute.
-            }{% if error_code_mapping_str %},
-            "errors": [ // Include ONLY if error mapping provided AND relevant errors visually identified. Empty array otherwise.
-                {
-                    "error_code": "string",
-                    "reasoning": "string", // Specific reasoning linking **visually observed state** to error.
-                    "confidence_float": "float"
-                }
-            ]{% endif %}
-        }
-    ]{% if verification_code_check %},
-    "verification_code_reasoning": "string", // Step-by-step analysis based *only* on **screenshot/DOM**: Is code input visually needed *now*? Is availability visually indicated?
-    "need_verification_code": "boolean" // True only if input visually needed now AND availability visually indicated. False otherwise.
+    "user_goal_stage": str, // A string to describe the reasoning whether user goal has been achieved or not.
+    "user_goal_achieved": bool, // True if the user goal has been completed, otherwise False.
+    "action_plan": str, // A string that describes the plan of actions you're going to take. Be specific and to the point. Use this as a quick summary of the actions you're going to take, and what order you're going to take them in, and how that moves you towards your overall goal. Output "COMPLETE" action in the "actions" if user_goal_achieved is True. Output "TERMINATE" action in the "actions" if your plan is to terminate the process.
+    "actions": array // An array of actions. Here's the format of each action:
+    [{
+        "reasoning": str, // The reasoning behind the action. This reasoning must be user information agnostic. Mention why you chose the action type, and why you chose the element id. Keep the reasoning short and to the point.
+        "user_detail_query": str, // Think of this value as a Jeopardy question and the intention behind the action. Ask the user for the details you need for executing this action. Ask the question even if the details are disclosed in user goal or user details. If it's a text field, ask for the text. If it's a file upload, ask for the file. If it's a dropdown, ask for the relevant information. If you are clicking on something specific, ask about what the intention is behind the click and what to click on. If you're downloading a file and you have multiple options, ask the user which one to download. Examples are: "What product ID should I input into the search bar?", "What file should I upload?", "What is the previous insurance provider of the user?", "Which invoice should I download?", "Does the user have any pets?". If the action doesn't require any user details, describe the intention behind the action.
+        "user_detail_answer": str, // The answer to the `user_detail_query`. The source of this answer can be user goal or user details.
+        "confidence_float": float, // The confidence of the action. Pick a number between 0.0 and 1.0. 0.0 means no confidence, 1.0 means full confidence
+        "action_type": str, // It's a string enum: "CLICK", "INPUT_TEXT", "UPLOAD_FILE", "SELECT_OPTION", "WAIT", "SOLVE_CAPTCHA", "COMPLETE", "TERMINATE". "CLICK" is an element you'd like to click. "INPUT_TEXT" is an element you'd like to input text into. "UPLOAD_FILE" is an element you'd like to upload a file into. "SELECT_OPTION" is an element you'd like to select an option from. "WAIT" action should be used if there are no actions to take and there is some indication on screen that waiting could yield more actions. "WAIT" should not be used if there are actions to take. "SOLVE_CAPTCHA" should be used if there's a captcha to solve on the screen. "COMPLETE" is used when the {{"complete criterion has been met" if complete_criterion else "user goal has been achieved"}} AND if there's any data extraction goal, you should be able to get data from the page. Never return a COMPLETE action unless the {{ "complete criterion is met" if complete_criterion else "user goal is achieved" }}. "TERMINATE" is used to terminate the whole task with a failure when it doesn't seem like the user goal can be achieved. Do not use "TERMINATE" if waiting could lead the user towards the goal. Only return "TERMINATE" if you are on a page where the user goal cannot be achieved. All other actions are ignored when "TERMINATE" is returned.
+        "id": str, // The id of the element to take action on. The id has to be one from the elements list
+        "text": str, // Text for INPUT_TEXT action only
+        "file_url": str, // The url of the file to upload if applicable. This field must be present for UPLOAD_FILE but can also be present for CLICK only if the click is to upload the file. It should be null otherwise.
+        "download": bool, // Can only be true for CLICK actions. If true, the browser will trigger a download by clicking the element. If false, the browser will click the element without triggering a download.
+        "option": {  // The option to select for SELECT_OPTION action only. null if not SELECT_OPTION action
+            "label": str, // the label of the option if any. MAKE SURE YOU USE THIS LABEL TO SELECT THE OPTION. DO NOT PUT ANYTHING OTHER THAN A VALID OPTION LABEL HERE
+            "index": int, // the index corresponding to the option index under the select element.
+            "value": str // the value of the option. MAKE SURE YOU USE THIS VALUE TO SELECT THE OPTION. DO NOT PUT ANYTHING OTHER THAN A VALID OPTION VALUE HERE
+        },
+{% if error_code_mapping_str %}
+        "errors": array // A list of errors. This is used to surface any errors that matches the current situation for COMPLETE and TERMINATE actions. For other actions or if no error description suits the current situation on the screenshots, return an empty list. You are allowed to return multiple errors if there are multiple errors on the page.
+        [{
+            "error_code": str, // The error code from the user's error code list
+            "reasoning": str, // The reasoning behind the error. Be specific, referencing any user information and their fields in your reasoning. Keep the reasoning short and to the point.
+            "confidence_float": float // The confidence of the error. Pick a number between 0.0 and 1.0. 0.0 means no confidence, 1.0 means full confidence
+        }]
 {% endif %}
+    }],{% if verification_code_check %}
+    "verification_code_reasoning": str, // Let's think step by step. Describe what you see and think if a verification code is needed for login or any verification step. Explain why you believe a verification code is needed or not. Has the code been sent and is code available somewhere (email, phone or 2FA device)?
+    "need_verification_code": bool, // Whether a verification code must be entered on this page now. True only if the code is available to user. If the code is not sent, return false {% endif %}
 }
+
+Consider the action history from the last step and the screenshot together, if actions from the last step don't yield positive impact, try other actions or other action combinations.
+Action history from previous steps: (note: even if the action history suggests goal is achieved, check the screenshot and the DOM elements to make sure the goal is achieved)
+```
+{{ action_history }}
+```
+{% if complete_criterion %}
+Complete criterion:
+```
+{{ complete_criterion }}
+```{% endif %}
+
+User goal:
+```
+{{ navigation_goal }}
+```
+{% if error_code_mapping_str %}
+Use the error codes and their descriptions to surface user-defined errors. Do not return any error that's not defined by the user. User defined errors:
+{{ error_code_mapping_str }}
+{% endif %}
+{% if data_extraction_goal %}
+User Data Extraction Goal:
+```
+{{ data_extraction_goal }}
+```
+{% endif %}
+
+User details:
+```
+{{ navigation_payload_str }}
+```
+
+Clickable elements from `{{ current_url }}`:
+```
+{{ elements }}
+```
+
+The URL of the page you're on right now is `{{ current_url }}`.
+
+Current datetime, ISO format:
+```
+{{ local_datetime }}
 ```
