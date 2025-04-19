@@ -613,7 +613,7 @@ if settings.ENABLE_OLLAMA:
             "OLLAMA_PRIMARY_MODEL",
             LLMConfig(
                 "ollama/" + settings.OLLAMA_PRIMARY_MODEL,
-                ["OLLAMA_API_BASE"],
+                ["OLLAMA_PRIMARY_API_BASE"],
                 supports_vision=settings.OLLAMA_PRIMARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
                 images_in_user_message=True,
@@ -626,7 +626,7 @@ if settings.ENABLE_OLLAMA:
             "OLLAMA_SECONDARY_MODEL",
             LLMConfig(
                 "ollama/" + settings.OLLAMA_SECONDARY_MODEL,
-                ["OLLAMA_API_BASE"],
+                ["OLLAMA_SECONDARY_API_BASE"],
                 supports_vision=settings.OLLAMA_SECONDARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
                 num_ctx=settings.OLLAMA_SECONDARY_NUM_CTX,

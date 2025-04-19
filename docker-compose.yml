@@ -39,6 +39,8 @@ services:
     environment:
       - DATABASE_STRING=postgresql+psycopg://skyvern:skyvern@postgres:5432/skyvern
       - BROWSER_TYPE=chromium-headful
+      - BROWSER_WIDTH=1280
+      - BROWSER_HEIGHT=720
       - ENABLE_OPENAI=false
       # - LLM_KEY=OPENAI_GPT4O
       # - OPENAI_API_KEY=<your_openai_key>
