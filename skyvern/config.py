@@ -157,13 +157,13 @@ class Settings(BaseSettings):
     # OLLAMA
     OLLAMA_PRIMARY_API_BASE: str | None = "localhost:11434"
     OLLAMA_PRIMARY_MODEL: str | None = None
-    OLLAMA_PRIMARY_SUPPORTS_VISION: boolean | None = False
+    OLLAMA_PRIMARY_SUPPORTS_VISION: bool | None = False
     OLLAMA_PRIMARY_TEMPERATURE: float = 0.2
     OLLAMA_PRIMARY_NUM_CTX: int = 32768
     
     OLLAMA_SECONDARY_API_BASE: str | None = "localhost:11434"
     OLLAMA_SECONDARY_MODEL: str | None = None
-    OLLAMA_SECONDARY_SUPPORTS_VISION: boolean | None = False
+    OLLAMA_SECONDARY_SUPPORTS_VISION: bool | None = False
     OLLAMA_SECONDARY_TEMPERATURE: float = 0.2
     OLLAMA_SECONDARY_NUM_CTX: int = 32768
 
