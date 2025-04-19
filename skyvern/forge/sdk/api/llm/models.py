@@ -41,7 +41,6 @@ class LLMConfig(LLMConfigBase):
     temperature: float | None = SettingsManager.get_settings().LLM_CONFIG_TEMPERATURE
     reasoning_effort: str | None = None
     num_ctx: int | None = None
-    temperature: float | None = None
 
 
 @dataclass(frozen=True)
