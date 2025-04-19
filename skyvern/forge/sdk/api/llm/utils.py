@@ -34,6 +34,7 @@ async def llm_messages_builder(
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/png;base64,{encoded_image}",
+                        "detail": "low"
                     },
                 }
             )
@@ -69,7 +70,7 @@ def parse_api_response(response: litellm.ModelResponse, add_assistant_prefix: bo
         try:
             if not content:
                 raise EmptyLLMResponseError(str(response))
-            content = try_to_extract_json_from_markdown_format(content)
+            content = try_to_extract_json(content)
             return commentjson.loads(content)
         except Exception as e:
             if content:
@@ -116,7 +117,7 @@ def fix_cutoff_json(json_string: str, error_position: int) -> dict[str, Any]:
         raise InvalidLLMResponseFormat(json_string) from e
 
 
-def fix_unescaped_quotes_in_json(json_string: str) -> str:
+def fix_unescaped_chars_in_json(json_string: str) -> str:
     """
     Extracts the positions of quotation marks that define the JSON structure
     and the strings between them, handling unescaped quotation marks within strings.
@@ -131,13 +132,17 @@ def fix_unescaped_quotes_in_json(json_string: str) -> str:
     in_string = False
     escape = False
     json_structure_chars = {",", ":", "}", "]", "{", "["}
+    json_reserved_chars = {"b", "f", "n", "r", "t", "\"", "\\"}
     result = []
 
     i = 0
     while i < len(json_string):
         char = json_string[i]
         if char == escape_char:
-            escape = not escape
+            if in_string and not escape and i < len(json_string) - 1 and json_string[i + 1] not in json_reserved_chars:
+                indices_to_add_escape_char.append(i)
+            else:
+                escape = not escape
         elif char == '"' and not escape:
             if in_string:
                 # Check if the next non-whitespace character is a JSON structure character
@@ -181,7 +186,7 @@ def fix_and_parse_json_string(json_string: str) -> dict[str, Any]:
 
     LOG.info("Auto-fixing JSON string.")
     # Escape unescaped quotes in the JSON string
-    json_string = fix_unescaped_quotes_in_json(json_string)
+    json_string = fix_unescaped_chars_in_json(json_string)
     try:
         # Attempt to parse the JSON string
         return commentjson.loads(json_string)
@@ -196,8 +201,16 @@ def fix_and_parse_json_string(json_string: str) -> dict[str, Any]:
             return fix_cutoff_json(json_string, error_position)
 
 
-def try_to_extract_json_from_markdown_format(text: str) -> str:
+def try_to_extract_json(text: str) -> str:
     pattern = r"```json\s*(.*?)\s*```"
+    match = re.search(pattern, text, re.DOTALL)
+    if match:
+        return match.group(1)
+    else:
+        return try_to_extract_json_2(text)
+
+def try_to_extract_json_2(text: str) -> str:
+    pattern = r"({.*})"
     match = re.search(pattern, text, re.DOTALL)
     if match:
         return match.group(1)
