@@ -106,7 +106,7 @@ class LLMAPIHandlerFactory:
                 task_v2=task_v2,
                 thought=thought,
             )
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix, llm_config.images_in_user_message)
+            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
 
             await app.ARTIFACT_MANAGER.create_llm_artifact(
                 data=json.dumps(
@@ -288,7 +288,7 @@ class LLMAPIHandlerFactory:
             if not llm_config.supports_vision:
                 screenshots = None
 
-            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix, llm_config.images_in_user_message)
+            messages = await llm_messages_builder(prompt, screenshots, llm_config.add_assistant_prefix)
             await app.ARTIFACT_MANAGER.create_llm_artifact(
                 data=json.dumps(
                     {

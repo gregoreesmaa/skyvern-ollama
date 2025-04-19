@@ -616,7 +616,6 @@ if settings.ENABLE_OLLAMA:
                 ["OLLAMA_PRIMARY_API_BASE"],
                 supports_vision=settings.OLLAMA_PRIMARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
-                images_in_user_message=settings.OLLAMA_PRIMARY_SUPPORTS_VISION,
                 num_ctx=settings.OLLAMA_PRIMARY_NUM_CTX,
                 temperature=settings.OLLAMA_PRIMARY_TEMPERATURE,
                 litellm_params=LiteLLMParams(
@@ -632,7 +631,6 @@ if settings.ENABLE_OLLAMA:
                 ["OLLAMA_SECONDARY_API_BASE"],
                 supports_vision=settings.OLLAMA_SECONDARY_SUPPORTS_VISION,
                 add_assistant_prefix=False,
-                images_in_user_message=settings.OLLAMA_PRIMARY_SUPPORTS_VISION,
                 num_ctx=settings.OLLAMA_SECONDARY_NUM_CTX,
                 temperature=settings.OLLAMA_SECONDARY_TEMPERATURE,
                 litellm_params=LiteLLMParams(

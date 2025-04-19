@@ -40,7 +40,6 @@ class LLMConfig(LLMConfigBase):
     max_completion_tokens: int | None = None
     temperature: float | None = SettingsManager.get_settings().LLM_CONFIG_TEMPERATURE
     reasoning_effort: str | None = None
-    images_in_user_message: bool = False
     num_ctx: int | None = None
     temperature: float | None = None
 

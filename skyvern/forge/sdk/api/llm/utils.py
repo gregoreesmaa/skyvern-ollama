@@ -17,7 +17,6 @@ async def llm_messages_builder(
     prompt: str,
     screenshots: list[bytes] | None = None,
     add_assistant_prefix: bool = False,
-    images_in_user_message: bool = False,
 ) -> list[dict[str, Any]]:
     messages: list[dict[str, Any]] = [
         {
@@ -26,7 +25,7 @@ async def llm_messages_builder(
         }
     ]
 
-    if screenshots and not images_in_user_message:
+    if screenshots:
         for screenshot in screenshots:
             encoded_image = base64.b64encode(screenshot).decode("utf-8")
             messages.append(
@@ -34,7 +33,6 @@ async def llm_messages_builder(
                     "type": "image_url",
                     "image_url": {
                         "url": f"data:image/png;base64,{encoded_image}",
-                        "detail": "low"
                     },
                 }
             )
@@ -44,12 +42,7 @@ async def llm_messages_builder(
             {"role": "user", "content": messages},
             {"role": "assistant", "content": "{"},
         ]
-    if not screenshots or not images_in_user_message:
-        return [{"role": "user", "content": messages}]
-    else:
-        images = [f"data:image/png;base64,{base64.b64encode(screenshot).decode('utf-8')}" for screenshot in screenshots]
-        return [{"role": "user", "content": messages, "images": images}]
-        
+    return [{"role": "user", "content": messages}]
 
 
 def parse_api_response(response: litellm.ModelResponse, add_assistant_prefix: bool = False) -> dict[str, Any]:
